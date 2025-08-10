@@ -1,19 +1,235 @@
-Project biobank {
+Project pacdata {
   database_type: "PostgreSQL"
+  Note: 'Базовая схема для прототипа: пациенты, визиты, анализы и справочники'
 }
 
-Table Пользователи {
-  id             serial       [pk]
-  username       varchar(120) [not null, unique]
-  password_hash  varchar(128) [not null]
-  birthday       date
-  created_at     timestamptz  [not null, default: `now()`]
+/* =========================
+   Справочники / классификаторы
+   ========================= */
+
+Table units {
+  id        serial       [pk]
+  code      varchar(32)  [not null, unique]          // напр. "mg/L", "ng/mL", "pg/mL"
+  name      varchar(128) [not null]                  // человекочитаемо
+  Note: 'Единицы измерения'
 }
 
-Table samples {
+Enum gender {
+  male      // M
+  female    // F
+  other     // X/не указано
+}
+
+Table clinical_centers {
+  id        serial       [pk]
+  name      varchar(255) [not null, unique]
+  Note: 'Клинические центры'
+}
+
+Table icd10 {                                   // МКБ-10 (упрощённо)
+  id        serial       [pk]
+  code      varchar(10)  [not null, unique]     // напр. "I10"
+  name      varchar(255) [not null]
+  Note: 'Справочник МКБ-10 (основные диагнозы)'
+}
+
+Table clinical_outcomes {
+  id        serial       [pk]
+  name      varchar(128) [not null, unique]
+  Note: 'Клинический исход'
+}
+
+Table doses {
+  id        serial       [pk]
+  label     varchar(64)  [not null, unique]   // напр. "5 mg", "10 mg", "по 2 раза в день"
+  Note: 'Справочник дозировок (человеческая метка)'
+}
+
+Table inn_direct_inhibitors {
+  id        serial       [pk]
+  name      varchar(128) [not null, unique]   // МНН прямых ингибиторов
+  Note: 'Справочник МНН прямых ингибиторов'
+}
+
+Table drugs {
+  id        serial       [pk]
+  name      varchar(255) [not null, unique]   // наименование ЛП (торг. или МНН)
+  inn_id    int          [ref: > inn_direct_inhibitors.id] // опционально: связать с МНН
+  Note: 'Справочник лекарственных препаратов'
+}
+
+/* =========================
+   Пользователи
+   ========================= */
+
+Table users {
+  id            serial        [pk]
+  username      varchar(120)  [not null, unique]
+  password_hash varchar(128)  [not null]
+  full_name     varchar(255)
+  email         varchar(255)
+  role          varchar(64)   // упрощённо
+  created_at    timestamptz   [not null, default: `now()`]
+  Note: 'Системные пользователи (не пациенты)'
+}
+
+/* =========================
+   Пациенты и визиты
+   ========================= */
+
+Table patients {
+  id                    serial        [pk]
+  code                  varchar(64)   [not null, unique]    // внутренний код пациента
+  last_name             varchar(128)  [not null]
+  first_name            varchar(128)  [not null]
+  middle_name           varchar(128)                         // отчество/среднее имя
+  sex                   gender        [not null]
+  birth_date            date
+  center_id             int           [ref: > clinical_centers.id]   // клинический центр (из справочника)
+
+  // Базовая информация на уровне пациента:
+  primary_icd10_id      int           [ref: > icd10.id]      // основное заболевание (МКБ)
+  diagnosis_text        varchar(512)                          // развёрнутый диагноз (если нужно)
+
+  // Терапия прямыми ингибиторами на уровне пациента (многие через связку ниже)
+  genome_file_url       varchar(1024)                         // ссылка на файл генома
+
+  created_at            timestamptz   [not null, default: `now()`]
+  Note: 'Пациенты (общие данные, неизменные между визитами)'
+}
+
+Table patient_inhibitor_therapy {         // МНН прямых ингибиторов + доза (на уровне пациента)
+  id         serial [pk]
+  patient_id int    [not null, ref: > patients.id]
+  inn_id     int    [not null, ref: > inn_direct_inhibitors.id]
+  dose_id    int    [ref: > doses.id]
+  Note: 'Назначения прямых ингибиторов (базовый уровень пациента)'
+}
+
+Table visits {
+  id                      serial       [pk]
+  patient_id              int          [not null, ref: > patients.id]
+  visit_date              date         [not null]
+
+  age_at_visit_years      numeric(5,2)           // возраст на начало визита (лет, с десятыми)
+  weight_kg               numeric(6,2)
+  height_cm               numeric(6,2)
+  sex_at_visit            gender                 // если нужно фиксировать на дату визита (обычно совпадает с patients.sex)
+
+  additional_disease_text varchar(512)           // доп. заболевание (текст)
+  referral_text           varchar(512)           // направление (текст)
+
+  clinical_outcome_id     int          [ref: > clinical_outcomes.id]  // исход визита (если фиксируется на визит)
+  Note: 'Визиты пациента; часть параметров может меняться от визита к визиту'
+}
+
+Table visit_drug_intakes {              // Список принимаемых препаратов в рамках визита
+  id         serial [pk]
+  visit_id   int    [not null, ref: > visits.id]
+  drug_id    int    [not null, ref: > drugs.id]
+  dose_id    int    [ref: > doses.id]
+  Note: 'Принимаемые препараты на момент визита (множественный список)'
+}
+
+/* =========================
+   Анализы и лабораторные параметры
+   =========================
+   Разные подтипы лабораторных анализов вынесены в отдельные таблицы.
+   Если захочешь, можно свернуть в одну универсальную таблицу с subtype + JSON.
+*/
+
+/* --- Больничные анализы (triplet: название - значение - единица) --- */
+Table hospital_tests {
   id           serial       [pk]
-  code         varchar(64)  [not null, unique]
-  donor_id     int          [not null, ref: > users.id]
-  collected_at timestamptz  [not null]
-  stored_at    varchar(64)
+  visit_id     int          [not null, ref: > visits.id]
+  name         varchar(255) [not null]            // название показателя (можно включать единицу в имя по твоей логике)
+  value_text   varchar(255)                       // значение как текст (допускаем нечисловое)
+  value_num    numeric(18,6)                      // числовое значение (если применимо)
+  unit_id      int           [ref: > units.id]    // единица (опционально, даже если она в name)
+  Note: 'Больничные анализы: Название - значение - единица'
 }
+
+/* --- Лабораторные анализы: генетика --- */
+Table lab_genetics {
+  id           serial       [pk]
+  visit_id     int          [not null, ref: > visits.id]
+  analyte_name varchar(255) [not null]            // название маркера/гена/варианта
+  value_text   varchar(255)                       // значение как текст (генотип и т.п.)
+  value_num    numeric(18,6)                      // если бывает числовым
+  unit_id      int           [ref: > units.id]
+  Note: 'Генетические анализы: название - значение - единица'
+}
+
+/* --- Лабораторные анализы: концентрация лекарств --- */
+Table lab_concentrations {
+  id        serial       [pk]
+  visit_id  int          [not null, ref: > visits.id]
+  drug_id   int          [not null, ref: > drugs.id]  // препарат (справочник)
+  value_num numeric(18,6)                              // концентрация
+  unit_id   int          [ref: > units.id]
+  Note: 'Концентрация лекарств: препарат - значение - единица'
+}
+
+/* --- Лабораторные анализы: фенотипирование --- */
+/* Заголовок на уровень "препарат", детали на уровне "метаболит" (их может быть несколько) */
+Table lab_phenotyping {
+  id       serial [pk]
+  visit_id int    [not null, ref: > visits.id]
+  drug_id  int    [not null, ref: > drugs.id]
+  Note: 'Фенотипирование по препарату (детали в метаболитах ниже)'
+}
+
+Table lab_phenotyping_metabolites {
+  id                 serial       [pk]
+  phenotyping_id     int          [not null, ref: > lab_phenotyping.id, on delete: cascade]
+  metabolite_name    varchar(255) [not null]           // вносится вручную
+  value_num          numeric(18,6)
+  unit_id            int          [ref: > units.id]
+  Note: 'У одного препарата может быть несколько метаболитов с измерениями'
+}
+
+/* --- Лабораторные анализы: микроРНК --- */
+Table lab_microrna {
+  id           serial       [pk]
+  visit_id     int          [not null, ref: > visits.id]
+  analyte_name varchar(255) [not null]    // название микроРНК
+  value_num    numeric(18,6)
+  value_text   varchar(255)
+  unit_id      int          [ref: > units.id]
+  Note: 'МикроРНК: название - значение - единица'
+}
+
+/* =========================
+   Связи (Ref) для явности
+   ========================= */
+
+Ref: patients.center_id > clinical_centers.id
+Ref: patients.primary_icd10_id > icd10.id
+Ref: patient_inhibitor_therapy.patient_id > patients.id
+Ref: patient_inhibitor_therapy.inn_id > inn_direct_inhibitors.id
+Ref: patient_inhibitor_therapy.dose_id > doses.id
+
+Ref: visits.patient_id > patients.id
+Ref: visits.clinical_outcome_id > clinical_outcomes.id
+
+Ref: visit_drug_intakes.visit_id > visits.id
+Ref: visit_drug_intakes.drug_id > drugs.id
+Ref: visit_drug_intakes.dose_id > doses.id
+
+Ref: lab_concentrations.visit_id > visits.id
+Ref: lab_concentrations.drug_id > drugs.id
+Ref: lab_concentrations.unit_id > units.id
+
+Ref: lab_phenotyping.visit_id > visits.id
+Ref: lab_phenotyping.drug_id > drugs.id
+Ref: lab_phenotyping_metabolites.phenotyping_id > lab_phenotyping.id
+Ref: lab_phenotyping_metabolites.unit_id > units.id
+
+Ref: lab_genetics.visit_id > visits.id
+Ref: lab_genetics.unit_id > units.id
+
+Ref: lab_microrna.visit_id > visits.id
+Ref: lab_microrna.unit_id > units.id
+
+Ref: hospital_tests.visit_id > visits.id
+Ref: hospital_tests.unit_id > units.id
