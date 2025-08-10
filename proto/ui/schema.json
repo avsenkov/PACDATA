@@ -1,0 +1,11 @@
+{
+  "title": "A registration form",
+  "description": "A simple form example.",
+  "type": "object",
+  "required": ["username", "password"],
+  "properties": {
+    "username": { "type": "string", "title": "Username" },
+    "password": { "type": "string", "title": "Password", "minLength": 3 },
+    "birthday": { "type": "string", "format": "date", "title": "Birthday" }
+  }
+}

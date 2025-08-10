@@ -1,0 +1,5 @@
+{
+  "username": { "ui:autofocus": true, "ui:emptyValue": "" },
+  "password": { "ui:widget": "password", "ui:help": "Hint: Make it strong!" },
+  "birthday": { "ui:widget": "date" }
+}
