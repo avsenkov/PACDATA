@@ -1,0 +1,11 @@
+{
+  "code": "P-0001",
+  "last_name": "Петров",
+  "first_name": "Пётр",
+  "sex": "male",
+  "center_id": 1,
+  "primary_icd10_id": 1,
+  "inhibitor_therapy": [
+    { "inn_id": 1, "dose_id": 2 }
+  ]
+}

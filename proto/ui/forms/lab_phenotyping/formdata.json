@@ -1,0 +1,7 @@
+{
+  "visit_id": 1,
+  "drug_id": 2,
+  "metabolites": [
+    { "metabolite_name": "M1", "value_num": 0.7, "unit_id": 3 }
+  ]
+}

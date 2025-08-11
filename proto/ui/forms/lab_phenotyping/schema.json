@@ -1,0 +1,34 @@
+{
+  "title": "Лаборатория — фенотипирование (одна запись)",
+  "type": "object",
+  "required": ["visit_id", "drug_id"],
+  "properties": {
+    "visit_id": { "type": "integer", "title": "Визит ID" },
+    "drug_id": {
+      "title": "Препарат",
+      "oneOf": [
+        { "const": 1, "title": "Препарат X" },
+        { "const": 2, "title": "Препарат Y" }
+      ]
+    },
+    "metabolites": {
+      "type": "array",
+      "title": "Метаболиты",
+      "items": {
+        "type": "object",
+        "required": ["metabolite_name", "value_num"],
+        "properties": {
+          "metabolite_name": { "type": "string", "title": "Название" },
+          "value_num": { "type": "number", "title": "Значение" },
+          "unit_id": {
+            "title": "Ед. изм.",
+            "oneOf": [
+              { "const": 2, "title": "мг/л" },
+              { "const": 3, "title": "нг/мл" }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

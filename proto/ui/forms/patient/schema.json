@@ -1,0 +1,51 @@
+{
+  "title": "Пациент",
+  "description": "Общие данные пациента",
+  "type": "object",
+  "required": ["code", "last_name", "first_name", "sex"],
+  "properties": {
+    "code": { "type": "string", "title": "Код пациента" },
+    "last_name": { "type": "string", "title": "Фамилия" },
+    "first_name": { "type": "string", "title": "Имя" },
+    "middle_name": { "type": "string", "title": "Отчество" },
+    "sex": {
+      "title": "Пол",
+      "enum" : ["male", "female", "other"],
+      "enumNames" : ["Мужской", "Женский", "Другое/не указано"]
+    },
+    "birth_date": { "type": "string", "format": "date", "title": "Дата рождения" },
+    "center_id": {
+      "title": "Клинический центр",
+      "enum": [1, 2],
+      "enumNames" : ["Центр №1", "Центр №2"]
+    },
+    "primary_icd10_id": {
+      "title": "Основное заболевание (МКБ)",
+      "enum" : [1, 2],
+      "enumNames": ["I10 — Гипертензия", "E11 — Сахарный диабет 2 типа"]
+    },
+    "diagnosis_text": { "type": "string", "title": "Диагноз (текст)" },
+    "genome_file_url": { "type": "string", "format": "uri", "title": "Файл генома (URL)" },
+
+    "inhibitor_therapy": {
+      "type": "array",
+      "title": "Назначения прямых ингибиторов",
+      "items": {
+        "type": "object",
+        "required": ["inn_id"],
+        "properties": {
+          "inn_id": {
+            "title": "МНН ингибитора",
+            "enum": [1, 2],
+            "enumNames": ["Ингибитор A", "Ингибитор B"]
+          },
+          "dose_id": {
+            "title": "Доза",
+            "enum": [1, 2],
+            "enumNames": ["5 mg", "10 mg"]
+          }
+        }
+      }
+    }
+  }
+}

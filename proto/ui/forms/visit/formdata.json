@@ -1,0 +1,30 @@
+{
+  "patient_id": 1,
+  "visit_date": "2025-08-10",
+  "age_at_visit_years": 45,
+  "weight_kg": 82.5,
+  "height_cm": 178,
+  "sex_at_visit": "male",
+  "clinical_outcome_id": 2,
+  "drug_intakes": [
+    { "drug_id": 1, "dose_id": 2 }
+  ],
+  "hospital_tests": [
+    { "name": "ALT (U/L)", "value_text": "31" }
+  ],
+  "lab_concentrations": [
+    { "drug_id": 1, "value_num": 1.4, "unit_id": 3 }
+  ],
+  "lab_phenotyping": [
+    {
+      "drug_id": 2,
+      "metabolites": [
+        { "metabolite_name": "M1", "value_num": 0.7, "unit_id": 3 },
+        { "metabolite_name": "M2", "value_num": 0.2, "unit_id": 3 }
+      ]
+    }
+  ],
+  "lab_microrna": [
+    { "analyte_name": "miR-21", "value_num": 2.1, "unit_id": 4 }
+  ]
+}

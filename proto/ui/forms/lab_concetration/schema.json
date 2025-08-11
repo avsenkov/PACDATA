@@ -1,0 +1,23 @@
+{
+  "title": "Лаборатория — концентрация ЛП (одна запись)",
+  "type": "object",
+  "required": ["visit_id", "drug_id", "value_num"],
+  "properties": {
+    "visit_id": { "type": "integer", "title": "Визит ID" },
+    "drug_id": {
+      "title": "Препарат",
+      "oneOf": [
+        { "const": 1, "title": "Препарат X" },
+        { "const": 2, "title": "Препарат Y" }
+      ]
+    },
+    "value_num": { "type": "number", "title": "Значение" },
+    "unit_id": {
+      "title": "Ед. изм.",
+      "oneOf": [
+        { "const": 2, "title": "мг/л" },
+        { "const": 3, "title": "нг/мл" }
+      ]
+    }
+  }
+}

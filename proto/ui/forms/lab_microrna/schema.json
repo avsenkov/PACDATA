@@ -1,0 +1,16 @@
+{
+  "title": "Лаборатория — микроРНК (одна запись)",
+  "type": "object",
+  "required": ["visit_id", "analyte_name", "value_num"],
+  "properties": {
+    "visit_id": { "type": "integer", "title": "Визит ID" },
+    "analyte_name": { "type": "string", "title": "Название" },
+    "value_num": { "type": "number", "title": "Значение" },
+    "unit_id": {
+      "title": "Ед. изм.",
+      "oneOf": [
+        { "const": 4, "title": "ед." }
+      ]
+    }
+  }
+}

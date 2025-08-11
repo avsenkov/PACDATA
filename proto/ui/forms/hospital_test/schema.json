@@ -1,0 +1,10 @@
+{
+  "title": "Больничный анализ (один показатель)",
+  "type": "object",
+  "required": ["visit_id", "name", "value_text"],
+  "properties": {
+    "visit_id": { "type": "integer", "title": "Визит ID" },
+    "name": { "type": "string", "title": "Название (c ед.)" },
+    "value_text": { "type": "string", "title": "Значение" }
+  }
+}

@@ -1,0 +1,4 @@
+{
+  "password": { "ui:widget": "password" },
+  "created_at": { "ui:disabled": true }
+}

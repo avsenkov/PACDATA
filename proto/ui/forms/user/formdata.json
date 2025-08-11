@@ -1,0 +1,7 @@
+{
+  "username": "operator1",
+  "password": "secret",
+  "full_name": "Иванов Иван",
+  "email": "ivanov@example.com",
+  "role": "admin"
+}

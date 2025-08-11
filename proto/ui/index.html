@@ -1,68 +1,357 @@
 <!doctype html>
-<html lang="en">
+<html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <title>A registration form</title>
+  <title>PACDATA — формы прототипа</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Bootstrap для стилей -->
-  <link
-    rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-  />
+  <!-- Bootstrap (для общей типографики) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css"
+        integrity="sha384-xOolHFLEh07PJGoPkLv1IbcEPTNtaed2xpHsD9ESMhqIYd0nLMwNLD69Npy4HI+N" crossorigin="anonymous">
+
+  <!-- AG Grid (CDN) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@34.1.1/styles/ag-grid.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@34.1.1/styles/ag-theme-quartz.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@34.1.1/dist/ag-grid-community.min.js"></script>
+
+  <!-- React + ReactDOM (UMD) -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+
+  <!-- rjsf v4 (UMD) -->
+  <script src="https://unpkg.com/@rjsf/core@4.2.2/dist/react-jsonschema-form.js"></script>
+
   <style>
     body { padding: 24px; }
-    .rjsf { max-width: 860px; margin: 0 auto; }
-    .actions { display: flex; justify-content: flex-end; margin-top: 12px; }
-  </style>
+    .wrap { max-width: 1100px; margin: 0 auto; }
+    .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
 
-  <!-- React + ReactDOM + rjsf (UMD) -->
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@rjsf/core@5.16.2/dist/rjsf.umd.min.js"></script>
-  <script src="https://unpkg.com/@rjsf/bootstrap-4@5.16.2/dist/rjsf.bootstrap-4.umd.min.js"></script>
+    /* компактнее поля формы rjsf */
+    .form-group { margin-bottom: .5rem; }
+
+    /* AG Grid: читаемая высота строк и авто-высота контейнера */
+    .ag-theme-quartz {
+      --ag-font-size: 20px;
+      --ag-grid-size: 40px;
+      --ag-row-height: 60px;
+      --ag-header-height: 60px;
+        font-family: inherit; /* тот же шрифт, что у <body> */
+        font-size: 1rem;      /* либо тот же, что у .form-control */
+        line-height: 1.5;
+    }
+    .ag-theme-quartz .ag-root-wrapper { border: 1px solid #dee2e6; border-radius: .25rem; }
+    .custom-grid-header {
+        font-family: inherit;
+        font-size: 1rem;
+        line-height: 1.5;
+        }
+    /* Контейнер секций-таблиц */
+    #tables { margin-top: 24px; }
+    .grid-section { margin-bottom: 16px; }
+    .grid-head { display:flex; align-items:center; justify-content:space-between; margin: 0 0 8px; }
+  </style>
+  <link rel="icon" href="data:,">
 </head>
 <body>
-  <div class="rjsf">
-    <h3 class="mb-1">A registration form</h3>
-    <div class="text-muted mb-3">A simple form example.</div>
+  <div class="wrap">
+    <div class="d-flex align-items-center gap-3 mb-3">
+      <h3 class="m-0">Формы</h3>
+      <select id="formSelect" class="form-select" style="max-width: 320px;"></select>
+      <button id="reloadBtn" class="btn btn-outline-secondary btn-sm">Перезагрузить</button>
+    </div>
+    <div id="title" class="text-muted mb-2"></div>
+
+    <!-- RJSF-форма (только скалярные поля: строки/числа/даты/селекты) -->
     <div id="app"></div>
+
+    <!-- Таблицы для всех отношений 1→N -->
+    <div id="tables"></div>
   </div>
 
   <script>
-    async function loadJSON(path) {
-      const r = await fetch(path, { cache: 'no-store' });
-      return r.json();
+  (function () {
+    // rjsf v4 UMD
+    const RJSF = window.JSONSchemaForm || window.RJSFCore || window.RJSF;
+    const Form = RJSF && (RJSF.default || RJSF);
+    if (!Form) { document.getElementById('app').innerHTML = '<div class="alert alert-danger">Не удалось загрузить rjsf</div>'; return; }
+
+    // === Конфиг списка форм (соответствует структуре ./forms/<key>/) ===
+    const FORMS = [
+      { key: 'user',              label: 'Пользователь' },
+      { key: 'patient',           label: 'Пациент' },
+      { key: 'visit',             label: 'Визит' },
+      { key: 'hospital_test',     label: 'Больничный анализ' },
+      { key: 'lab_genetics',      label: 'Лаборатория — генетика' },
+      { key: 'lab_concentration', label: 'Лаборатория — концентрация ЛП' },
+      { key: 'lab_phenotyping',   label: 'Лаборатория — фенотипирование' },
+      { key: 'lab_microrna',      label: 'Лаборатория — микроРНК' }
+    ];
+
+    // === DOM ===
+    const selectEl = document.getElementById('formSelect');
+    selectEl.innerHTML = FORMS.map(f=>`<option value="${f.key}">${f.label}</option>`).join('');
+    if (!selectEl.value) selectEl.value = 'visit';
+
+    const titleEl  = document.getElementById('title');
+    const appEl    = document.getElementById('app');
+    const tablesEl = document.getElementById('tables');
+
+    // === helpers ===
+    async function loadJSON(p){ const r=await fetch(p,{cache:'no-store'}); if(!r.ok) throw new Error(`${r.status} ${r.statusText}: ${p}`); return r.json(); }
+    const base = (name)=>`./forms/${name}/`;
+
+    // Утилиты для чтения enum/oneOf
+    function enumSpec(prop){
+      if (!prop) return null;
+      if (Array.isArray(prop.enum)) {
+        const ids = prop.enum.slice();
+        const names = Array.isArray(prop.enumNames) ? prop.enumNames.slice() : ids.map(String);
+        const map = {}; ids.forEach((v,i)=> map[String(v)] = names[i] ?? String(v));
+        return { values: ids.map(String), map };
+      }
+      if (Array.isArray(prop.oneOf)) {
+        const ids = prop.oneOf.map(o=> String(o.const));
+        const map = {}; prop.oneOf.forEach(o=> map[String(o.const)] = o.title ?? String(o.const));
+        return { values: ids, map };
+      }
+      return null;
     }
 
-    (async function () {
-      const schema = await loadJSON('./schema.json');
-      const uiSchema = await loadJSON('./uiSchema.json');
-      const formData = await loadJSON('./formData.json');
+    // Разделяем схему: скалярные свойства -> в rjsf, массивы -> в AG Grid
+    function splitSchema(schema){
+      const base = JSON.parse(JSON.stringify(schema||{}));
+      const arrays = [];
+      if (base && base.properties){
+        for (const [key, prop] of Object.entries(base.properties)){
+          if (prop && prop.type === 'array' && prop.items && (prop.items.type === 'object' || prop.items.properties)){
+            arrays.push({ key, title: prop.title || key, schema: prop });
+          }
+        }
+        // удалить массивы из rjsf-схемы
+        arrays.forEach(a => delete base.properties[a.key]);
+        if (Array.isArray(base.required)) base.required = base.required.filter(k => !arrays.find(a=>a.key===k));
+      }
+      return { baseSchema: base, arrays };
+    }
 
-      const Form = window.RJSFCore.withTheme(window.RJSFBootstrap4.Theme);
+    // Генерация колонок AG Grid из схемы items.properties
+    function columnsFromItemProps(props){
+      const cols = [];
+      for (const [field, p] of Object.entries(props||{})){
+        // пропускаем вложенные массивы — обработаем отдельно (flatten)
+        if (p.type === 'array') continue;
+        const es = enumSpec(p);
+        if (es){
+          cols.push({
+            field, headerName: p.title || field, editable: true,
+            cellEditor: 'agSelectCellEditor', cellEditorParams: { values: es.values },
+            valueFormatter: (x)=> es.map[String(x.value)] || '',
+            valueParser: (x)=> x.newValue
+          });
+          continue;
+        }
+        if (p.type === 'number' || p.type === 'integer'){
+          cols.push({ field, headerName: p.title || field, editable: true,
+            valueParser: (x)=> (x.newValue===''||isNaN(Number(x.newValue)))? null : (p.type==='integer'? parseInt(x.newValue,10): Number(x.newValue)) });
+        } else {
+          cols.push({ field, headerName: p.title || field, editable: true });
+        }
+      }
+      // столбец действий
+      cols.push({ headerName:'', width:110, flex:0, cellRenderer: p=>{ const b=document.createElement('button'); b.className='btn btn-sm btn-outline-danger'; b.textContent='Удалить'; b.onclick=()=>p.api.applyTransaction({remove:[p.node.data]}); return b; } });
+      return cols;
+    }
 
-      function App() {
-        const onSubmit = ({ formData }) =>
-          alert('Submitted:\n' + JSON.stringify(formData, null, 2));
-        return React.createElement(
-          Form,
-          { schema, uiSchema, formData, onSubmit },
-          React.createElement(
-            'div',
-            { className: 'actions' },
-            React.createElement(
-              'button',
-              { type: 'submit', className: 'btn btn-primary' },
-              'Submit'
-            )
-          )
-        );
+    // Построение спецификации таблицы для простого массива объектов
+    function buildSimpleTableSpec(arrKey, arrSchema, initial){
+      const itemProps = (arrSchema.items && arrSchema.items.properties) || {};
+      const cols = columnsFromItemProps(itemProps);
+      const blank = {}; for (const [f,p] of Object.entries(itemProps)) blank[f] = (p.type==='number'||p.type==='integer')? null : '';
+      return { key: arrKey, title: arrSchema.title || arrKey, cols, rows: initial || [], blank, regroup: (rows)=> rows };
+    }
+
+    // Построение таблицы для случая «массив объектов, внутри один подмассив» (flatten)
+    function buildFlattenTableSpec(arrKey, arrSchema, initial){
+      const itemProps = (arrSchema.items && arrSchema.items.properties) || {};
+      const subArrayEntry = Object.entries(itemProps).find(([k,p])=> p && p.type==='array' && p.items && p.items.properties);
+      if (!subArrayEntry) return null;
+      const [subKey, subSchema] = subArrayEntry; // например metabolites
+      // поля родителя, кроме подмассива
+      const parentFields = Object.fromEntries(Object.entries(itemProps).filter(([k,p])=> k!==subKey));
+      // поля дочерних элементов
+      const childFields  = (subSchema.items && subSchema.items.properties) || {};
+      const cols = columnsFromItemProps({ ...{[arrKey+'_parent_marker']:{title:'',type:'string'}}, ...parentFields, ...childFields });
+      // уберём служебный «маркер» из колонок
+      cols.shift();
+
+      // развернуть исходные данные в строки
+      const rows = [];
+      (initial||[]).forEach(parent => {
+        const base = {}; Object.keys(parentFields).forEach(f=> base[f]= parent[f] ?? ((parentFields[f].type==='number'||parentFields[f].type==='integer')? null : ''));
+        (parent[subKey]||[]).forEach(child => {
+          const row = { ...base }; Object.keys(childFields).forEach(cf=> row[cf] = child[cf] ?? ((childFields[cf].type==='number'||childFields[cf].type==='integer')? null : ''));
+          rows.push(row);
+        });
+        if ((parent[subKey]||[]).length===0) rows.push({ ...base });
+      });
+
+      const blank = {}; Object.assign(blank,
+        ...Object.entries(parentFields).map(([f,p])=>({[f]:(p.type==='number'||p.type==='integer')? null:''})),
+        ...Object.entries(childFields).map(([f,p])=>({[f]:(p.type==='number'||p.type==='integer')? null:''}))
+      );
+
+      // группировка обратно в исходную структуру
+      function regroup(rows){
+        const groupMap = new Map();
+        function keyOf(r){ return JSON.stringify(Object.fromEntries(Object.keys(parentFields).map(k=>[k,r[k]??null]))); }
+        rows.forEach(r=>{
+          const k = keyOf(r);
+          if (!groupMap.has(k)) groupMap.set(k,{ ...Object.fromEntries(Object.keys(parentFields).map(k2=>[k2,r[k2]??null])), [subKey]: [] });
+          const child = Object.fromEntries(Object.keys(childFields).map(k3=>[k3, r[k3]??null]));
+          // пропускаем полностью пустые дочерние
+          const allEmpty = Object.values(child).every(v=> v===null || v==='');
+          if (!allEmpty) groupMap.get(k)[subKey].push(child);
+        });
+        return Array.from(groupMap.values());
       }
 
-      const root = ReactDOM.createRoot(document.getElementById('app'));
-      root.render(React.createElement(App));
-    })();
+      return { key: arrKey, title: arrSchema.title || arrKey, cols, rows, blank, regroup };
+    }
+
+    // Создать секцию-таблицу на странице и вернуть Grid API
+    function mountGrid(sectionTitle, key, cols, rows, blankRow) {
+  // создаём секцию с заголовком и контейнером грида
+  const sec = document.createElement('div');
+  sec.className = 'grid-section';
+  sec.innerHTML = `
+    <div class="grid-head" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <h4 class="mb-0" style="font-family:inherit;font-weight:600;">${sectionTitle}</h4>
+      <button class="btn btn-sm btn-success" id="btn-add-${key}">+ Добавить строку</button>
+    </div>
+    <div id="grid-${key}" class="ag-theme-quartz"></div>
+  `;
+  if (typeof tablesEl !== 'undefined') {
+    tablesEl.appendChild(sec);
+  }
+
+  const el = document.getElementById(`grid-${key}`);
+  if (!el) return null;
+
+  const api = agGrid.createGrid(el, {
+    columnDefs: cols,
+    rowData: rows || [],
+    domLayout: 'autoHeight',
+    rowHeight: 35,
+    headerHeight: 35,
+    defaultColDef: {
+      resizable: true,
+      sortable: true,
+      flex: 1,
+      minWidth: 140,
+      cellStyle: {
+        fontFamily: 'inherit',
+        fontSize: '1rem',
+        lineHeight: '1.5'
+      },
+      headerClass: 'custom-grid-header'
+    },
+    onFirstDataRendered: params => {
+      if (params.api && typeof params.api.sizeColumnsToFit === 'function') {
+        params.api.sizeColumnsToFit();
+      }
+    }
+  });
+
+  const addBtn = document.getElementById(`btn-add-${key}`);
+  if (addBtn) addBtn.onclick = () => api.applyTransaction({ add: [ { ...(blankRow || {}) } ] });
+
+  if (typeof api.sizeColumnsToFit === 'function') setTimeout(() => api.sizeColumnsToFit(), 0);
+
+  if (!document.getElementById('custom-grid-header-style')) {
+    const style = document.createElement('style');
+    style.id = 'custom-grid-header-style';
+    style.textContent = `
+      .custom-grid-header {
+        font-family: inherit !important;
+        font-size: 1rem !important;
+        line-height: 1.5 !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  return api;
+}
+
+
+
+    // состояние спецификаций таблиц и API текущей формы
+    let tableSpecs = [];
+    let apis = {}; // key -> gridApi
+
+    // Основной рендер
+    async function render(name){
+      try{
+        // грузим json-описания
+        const [schema, uiSchema, formData] = await Promise.all([
+          loadJSON(base(name)+'schema.json'),
+          loadJSON(base(name)+'uiSchema.json').catch(()=> ({})),
+          loadJSON(base(name)+'formData.json').catch(()=> ({}))
+        ]);
+
+        // заголовок
+        titleEl.textContent = (schema.title||name) + (schema.description? ' — '+schema.description : '');
+
+        // делим схему: поля в rjsf, массивы в гриды
+        const { baseSchema, arrays } = splitSchema(schema);
+
+        // рендер rjsf
+        const actions = React.createElement('div',{className:'actions'},
+          React.createElement('button',{type:'submit',className:'btn btn-primary'},'Submit'),
+          React.createElement('button',{type:'reset', className:'btn btn-outline-secondary'},'Reset')
+        );
+        const onSubmit = ({formData: scalarData})=>{
+          // собрать данные из таблиц
+          const result = { ...scalarData };
+          tableSpecs.forEach(s => {
+            const list = [];
+            const api = apis[s.key];
+            if (api) api.forEachNode(n=> list.push({...n.data}));
+            result[s.key] = s.regroup(list);
+          });
+          alert('Submitted:' + JSON.stringify(result, null, 2));
+        };
+        ReactDOM.render(React.createElement(Form, { schema: baseSchema, uiSchema, formData, onSubmit }, actions), appEl);
+
+        // отрисовать таблицы
+        tablesEl.innerHTML='';
+        Object.values(apis).forEach(api=> api && api.destroy && api.destroy());
+        apis = {}; // сбросить
+        tableSpecs = []; // сбросить
+
+        for (const arr of arrays){
+          // если внутри есть один подмассив — делаем flatten, иначе — обычная таблица
+          const itemProps = (arr.schema.items && arr.schema.items.properties) || {};
+          const hasOneSubArray = Object.values(itemProps).filter(p=> p && p.type==='array').length === 1;
+          let spec;
+          if (hasOneSubArray) spec = buildFlattenTableSpec(arr.key, arr.schema, formData[arr.key]);
+          else spec = buildSimpleTableSpec(arr.key, arr.schema, formData[arr.key]);
+          const api = mountGrid(arr.title || arr.key, spec.key, spec.cols, spec.rows, spec.blank);
+          apis[spec.key] = api;
+          tableSpecs.push(spec);
+        }
+      } catch (e) {
+        console.error(e);
+        appEl.innerHTML = `<div class="alert alert-danger">${String(e)}</div>`;
+        tablesEl.innerHTML='';
+      }
+    }
+
+    document.getElementById('reloadBtn').onclick = ()=> render(selectEl.value);
+    selectEl.onchange = ()=> render(selectEl.value);
+
+    render(selectEl.value);
+  })();
   </script>
 </body>
 </html>

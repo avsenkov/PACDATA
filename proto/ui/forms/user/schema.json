@@ -1,0 +1,14 @@
+{
+  "title": "Пользователь",
+  "type": "object",
+  "required": ["username", "password"],
+  "properties": {
+    "id": { "type": "integer", "readOnly": true, "title": "ID" },
+    "username": { "type": "string", "title": "Логин", "minLength": 1 },
+    "password": { "type": "string", "title": "Пароль", "minLength": 3 },
+    "full_name": { "type": "string", "title": "ФИО" },
+    "email": { "type": "string", "format": "email", "title": "Email" },
+    "role": { "type": "string", "title": "Роль" },
+    "created_at": { "type": "string", "format": "date-time", "title": "Создан" }
+  }
+}

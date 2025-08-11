@@ -1,0 +1,17 @@
+{
+  "title": "Лаборатория — генетика (одна запись)",
+  "type": "object",
+  "required": ["visit_id", "analyte_name", "value_text"],
+  "properties": {
+    "visit_id": { "type": "integer", "title": "Визит ID" },
+    "analyte_name": { "type": "string", "title": "Маркер/ген/вариант" },
+    "value_text": { "type": "string", "title": "Значение" },
+    "unit_id": {
+      "title": "Ед. изм.",
+      "oneOf": [
+        { "const": 1, "title": "ед." },
+        { "const": 2, "title": "мг/л" }
+      ]
+    }
+  }
+}

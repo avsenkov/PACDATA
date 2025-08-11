@@ -135,7 +135,6 @@ Table visit_drug_intakes {              // Список принимаемых �
    Анализы и лабораторные параметры
    =========================
    Разные подтипы лабораторных анализов вынесены в отдельные таблицы.
-   Если захочешь, можно свернуть в одну универсальную таблицу с subtype + JSON.
 */
 
 /* --- Больничные анализы (triplet: название - значение - единица) --- */
@@ -181,7 +180,7 @@ Table lab_phenotyping {
 
 Table lab_phenotyping_metabolites {
   id                 serial       [pk]
-  phenotyping_id     int          [not null, ref: > lab_phenotyping.id, on delete: cascade]
+  phenotyping_id     int          [not null, ref: > lab_phenotyping.id]
   metabolite_name    varchar(255) [not null]           // вносится вручную
   value_num          numeric(18,6)
   unit_id            int          [ref: > units.id]
