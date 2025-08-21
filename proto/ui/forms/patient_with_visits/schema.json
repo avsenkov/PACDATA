@@ -10,7 +10,7 @@
     "sex": {
       "title": "Пол",
       "enum": ["male", "female", "other"],
-      "enumNames": ["Мужской", "Женский", "Другое/не указано"]
+      "enumNames": ["Мужской", "Женский", "Не указано"]
     },
     "visits": {
       "type": "array",
