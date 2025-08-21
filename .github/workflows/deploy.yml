@@ -2,7 +2,7 @@ name: Deploy subfolder to Yandex Object Storage
 
 on:
   push:
-    branches: [ "master" ]         # ваша ветка
+    branches: [ "main" ]         # ваша ветка
     paths:
       - "proto/**"                # деплоим только при изменениях здесь
       - "proto/.github/workflows/deploy.yml"
