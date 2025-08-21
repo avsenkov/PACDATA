@@ -4,13 +4,13 @@ on:
   push:
     branches: [ "main" ]         # ваша ветка
     paths:
-      - "proto/**"                # деплоим только при изменениях здесь
-      - "proto/.github/workflows/deploy.yml"
+      - "proto/ui/**"                # деплоим только при изменениях здесь
+      - ".github/workflows/deploy.yml"
 
 env:
   YC_S3_ENDPOINT: https://storage.yandexcloud.net
-  PUBLISH_SRC: proto               # что публикуем (папка в репозитории)
-  PUBLISH_DIR: proto               # если есть билд — поставьте сюда путь к артефактам (например, webapp/dist)
+  PUBLISH_SRC: proto/ui               # что публикуем (папка в репозитории)
+  PUBLISH_DIR: proto/ui               # если есть билд — поставьте сюда путь к артефактам (например, webapp/dist)
 
 jobs:
   deploy:
