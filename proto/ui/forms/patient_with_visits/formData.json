@@ -1,0 +1,23 @@
+{
+  "code": "P-0001",
+  "last_name": "Петров",
+  "first_name": "Пётр",
+  "middle_name": "Петрович",
+  "sex": "male",
+  "visits": [
+    {
+      "visit_date": "2024-01-10",
+      "clinical_outcome_id": 1,
+      "hospital_tests": [
+        { "name": "ALT (U/L)", "value_text": "32" }
+      ]
+    },
+    {
+      "visit_date": "2024-02-20",
+      "clinical_outcome_id": 2,
+      "hospital_tests": [
+        { "name": "AST (U/L)", "value_text": "28" }
+      ]
+    }
+  ]
+}
