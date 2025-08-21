@@ -1,7 +1,7 @@
 {
     "scripts": {
   "db:sql": "dbml2sql db/schema.dbml --postgres -o db/schema.sql",
-  "ui:serve": "http-server ui -p 5173 -c-1",
+  "ui:serve": "http-server proto/ui -p 5173 -c-1",
   "ui:screenshot": "playwright screenshot http://localhost:5173/ ui/form.png"
 }
 }
