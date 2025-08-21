@@ -1,0 +1,50 @@
+name: Deploy subfolder to Yandex Object Storage
+
+on:
+  push:
+    branches: [ "master" ]         # ваша ветка
+    paths:
+      - "proto/**"                # деплоим только при изменениях здесь
+      - "proto/.github/workflows/deploy.yml"
+
+env:
+  YC_S3_ENDPOINT: https://storage.yandexcloud.net
+  PUBLISH_SRC: proto               # что публикуем (папка в репозитории)
+  PUBLISH_DIR: proto               # если есть билд — поставьте сюда путь к артефактам (например, webapp/dist)
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout (sparse)
+        uses: actions/checkout@v5
+        with:
+          # тянем только нужный подкаталог
+          sparse-checkout: |
+            .github
+            ${{ env.PUBLISH_SRC }}
+          sparse-checkout-cone-mode: true
+
+      - name: Install AWS CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip
+          pip3 install --upgrade awscli
+
+      - name: Configure AWS CLI for Yandex S3
+        run: |
+          aws configure set aws_access_key_id "${{ secrets.YC_S3_KEY_ID }}"
+          aws configure set aws_secret_access_key "${{ secrets.YC_S3_SECRET }}"
+          aws configure set default.region ru-central1
+
+      - name: Sync to Object Storage
+        run: |
+          DEST="s3://${{ secrets.YC_BUCKET }}/"
+          # если публикуете в подкаталог бакета, раскомментируйте следующую строку:
+          # DEST="s3://${{ secrets.YC_BUCKET }}/${{ env.YC_BUCKET_PREFIX }}"
+          aws s3 sync "$PUBLISH_DIR"/ "$DEST" \
+            --delete \
+            --endpoint-url "$YC_S3_ENDPOINT"
