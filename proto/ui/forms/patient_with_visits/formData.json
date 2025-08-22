@@ -1,0 +1,28 @@
+{
+  "code": "P-0001",
+  "last_name": "Петров",
+  "first_name": "Пётр",
+  "middle_name": "Петрович",
+  "visits": [
+    {
+      "visit_date": "2024-01-10",
+      "age_at_visit_years": 45,
+      "weight_kg": 82.5,
+      "height_cm": 178,
+      "clinical_outcome_id": 1,
+      "drug_intakes": [ { "drug_id": 1, "dose_id": 2 } ],
+      "hospital_tests": [ { "name": "ALT (U/L)", "value_text": "32" } ],
+      "lab_concentrations": [ { "drug_id": 1, "value_num": 1.4, "unit_id": 3 } ]
+    },
+    {
+      "visit_date": "2024-02-20",
+      "age_at_visit_years": 46,
+      "weight_kg": 83.0,
+      "height_cm": 178,
+      "clinical_outcome_id": 2,
+      "drug_intakes": [ { "drug_id": 2, "dose_id": 1 } ],
+      "hospital_tests": [ { "name": "AST (U/L)", "value_text": "28" } ],
+      "lab_phenotyping": [ { "drug_id": 2, "metabolites": [ { "metabolite_name": "M1", "value_num": 0.5, "unit_id": 3 } ] } ]
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "visits": {
+    "ui:options": { "tabs": true, "tabNameField": "visit_date" },
+    "items": {
+      "additional_disease_text": { "ui:widget": "textarea", "ui:options": { "rows": 2 } },
+      "referral_text": { "ui:widget": "textarea", "ui:options": { "rows": 2 } },
+      "hospital_tests": { "items": { "value_text": { "ui:placeholder": "например, 32" } } },
+      "lab_genetics": { "items": { "unit_id": { "ui:placeholder": "ед. изм." } } },
+      "lab_concentrations": { "items": { "unit_id": { "ui:placeholder": "ед. изм." } } },
+      "lab_phenotyping": { "items": { "metabolites": { "items": { "unit_id": { "ui:placeholder": "ед. изм." } } } } }
+    }
+  }
+}
