@@ -4,7 +4,6 @@
   "age_at_visit_years": 45,
   "weight_kg": 82.5,
   "height_cm": 178,
-  "sex_at_visit": "male",
   "clinical_outcome_id": 2,
   "drug_intakes": [
     { "drug_id": 1, "dose_id": 2 }
