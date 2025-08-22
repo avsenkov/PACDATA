@@ -20,126 +20,20 @@
         "required": ["visit_date"],
         "properties": {
           "visit_date": { "type": "string", "format": "date", "title": "Дата визита" },
-
-          "age_at_visit_years": { "type": "number", "title": "Возраст (лет)", "minimum": 0 },
-          "weight_kg": { "type": "number", "title": "Вес (кг)", "minimum": 0 },
-          "height_cm": { "type": "number", "title": "Рост (см)", "minimum": 0 },
-          "sex_at_visit": {
-            "title": "Пол на дату визита",
-            "enum" : ["male", "female", "other"],
-            "enumNames" : ["Мужской", "Женский", "Другое/не указано"]
+          "clinical_outcome_id": {
+            "title": "Клинический исход",
+            "enum": [1, 2, 3],
+            "enumNames": ["Улучшение", "Без изменений", "Ухудшение"]
           },
-          "additional_disease_text": { "type": "string", "title": "Доп. заболевание" },
-          "referral_text": { "type": "string", "title": "Направление" },
-          "drug_intakes": {
+          "hospital_tests": {
             "type": "array",
-            "title": "Принимаемые препараты",
+            "title": "Больничные анализы",
             "items": {
               "type": "object",
-              "required": ["drug_id"],
+              "required": ["name", "value_text"],
               "properties": {
-                "drug_id": {
-                  "title": "Препарат",
-                  "enum" : [1, 2],
-                  "enumNames" : ["Препарат X", "Препарат Y"]
-                },
-                "dose_id": {
-                  "title": "Доза",
-                  "enum" : [1, 2],
-                  "enumNames" : ["5 mg", "10 mg"]
-                }
-              }
-            }
-          },
-                "name": { "type": "string", "title": "Название (c ед.)", "examples": ["ALT (U/L)"] },
+                "name": { "type": "string", "title": "Название (c ед.)" },
                 "value_text": { "type": "string", "title": "Значение" }
-              }
-            }
-          },
-          "lab_genetics": {
-            "type": "array",
-            "title": "Генетика",
-            "items": {
-              "type": "object",
-              "required": ["analyte_name", "value_text"],
-              "properties": {
-                "analyte_name": { "type": "string", "title": "Маркер/ген/вариант" },
-                "value_text": { "type": "string", "title": "Значение" },
-                "unit_id": {
-                  "title": "Ед. изм.",
-                  "enum": [1, 2],
-                  "enumNames" : ["ед.", "мг/л"]
-                }
-              }
-            }
-          },
-          "lab_concentrations": {
-            "type": "array",
-            "title": "Концентрация ЛП",
-            "items": {
-              "type": "object",
-              "required": ["drug_id", "value_num"],
-              "properties": {
-                "drug_id": {
-                  "title": "Препарат",
-                  "enum" : [1, 2],
-                  "enumNames" : ["Препарат X", "Препарат Y"]
-                },
-                "value_num": { "type": "number", "title": "Значение" },
-                "unit_id": {
-                  "title": "Ед. изм.",
-                  "enum": [2, 3],
-                  "enumNames": ["мг/л", "нг/мл"]
-                }
-              }
-            }
-          },
-          "lab_phenotyping": {
-            "type": "array",
-            "title": "Фенотипирование",
-            "items": {
-              "type": "object",
-              "required": ["drug_id"],
-              "properties": {
-                "drug_id": {
-                  "title": "Препарат",
-                  "enum" : [1, 2],
-                  "enumNames" : ["Препарат X", "Препарат Y"]
-                },
-                "metabolites": {
-                  "type": "array",
-                  "title": "Метаболиты",
-                  "items": {
-                    "type": "object",
-                    "required": ["metabolite_name", "value_num"],
-                    "properties": {
-                      "metabolite_name": { "type": "string", "title": "Назвние" },
-                      "value_num": { "type": "number", "title": "Значение" },
-                      "unit_id": {
-                        "title": "Ед. изм.",
-                        "enum": [2, 3],
-                        "enumNames": ["мг/л", "нг/мл"]
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "lab_microrna": {
-            "type": "array",
-            "title": "микроРНК",
-            "items": {
-              "type": "object",
-              "required": ["analyte_name", "value_num"],
-              "properties": {
-                "analyte_name": { "type": "string", "title": "Название" },
-                "value_num": { "type": "number", "title": "Значение" },
-                "unit_id": {
-                  "title": "Ед. изм.",
-                  "enum": [4],
-                  "enumNames" : ["ед."]
-                }
               }
             }
           }
