@@ -1,0 +1,12 @@
+{
+  "visits": {
+    "ui:options": { "tabs": true, "tabNameField": "visit_date" },
+    "items": {
+      "hospital_tests": {
+        "items": {
+          "value_text": { "ui:placeholder": "например, 32" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "title": "Пациент с визитами",
+  "type": "object",
+  "required": ["code", "last_name", "first_name", "sex"],
+  "properties": {
+    "code": { "type": "string", "title": "Код пациента" },
+    "last_name": { "type": "string", "title": "Фамилия" },
+    "first_name": { "type": "string", "title": "Имя" },
+    "middle_name": { "type": "string", "title": "Отчество" },
+    "sex": {
+      "title": "Пол",
+      "enum": ["male", "female", "other"],
+      "enumNames": ["Мужской", "Женский", "Другое/не указано"]
+    },
+    "visits": {
+      "type": "array",
+      "title": "Визиты",
+      "items": {
+        "type": "object",
+        "required": ["visit_date"],
+        "properties": {
+          "visit_date": { "type": "string", "format": "date", "title": "Дата визита" },
+          "clinical_outcome_id": {
+            "title": "Клинический исход",
+            "enum": [1, 2, 3],
+            "enumNames": ["Улучшение", "Без изменений", "Ухудшение"]
+          },
+          "hospital_tests": {
+            "type": "array",
+            "title": "Больничные анализы",
+            "items": {
+              "type": "object",
+              "required": ["name", "value_text"],
+              "properties": {
+                "name": { "type": "string", "title": "Название (c ед.)" },
+                "value_text": { "type": "string", "title": "Значение" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
