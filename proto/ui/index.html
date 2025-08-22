@@ -344,7 +344,9 @@
       let records = [];
 
       function renderTabs(){
-        data = records.map(r=> r.getData());
+
+        if (records.length) data = records.map(r=> r.getData());
+
         records = [];
         tabsEl.innerHTML='';
         const nav = document.createElement('ul');
