@@ -75,6 +75,45 @@
     const Form = RJSF && (RJSF.default || RJSF);
     if (!Form) { document.getElementById('app').innerHTML = '<div class="alert alert-danger">Не удалось загрузить rjsf</div>'; return; }
 
+    const DefaultArrayFieldTemplate = Form.defaultProps && Form.defaultProps.templates && Form.defaultProps.templates.ArrayFieldTemplate;
+
+    function TabArrayFieldTemplate(props){
+      const opts = (props.uiSchema && props.uiSchema['ui:options']) || {};
+      if (!opts.tabs || !DefaultArrayFieldTemplate) {
+        return React.createElement(DefaultArrayFieldTemplate || React.Fragment, props);
+      }
+      const { items, canAdd, onAddClick, formData } = props;
+      const [active, setActive] = React.useState(0);
+      const titleField = opts.tabNameField;
+      function tabLabel(i){
+        if (titleField && formData && formData[i] && formData[i][titleField]) return formData[i][titleField];
+        return `Визит ${i+1}`;
+      }
+      return React.createElement('div', {},
+        React.createElement('ul', { className:'nav nav-tabs mb-2' },
+          items.map((item, i) =>
+            React.createElement('li', { className:'nav-item', key:item.key },
+              React.createElement('a', { href:'#', className:'nav-link'+(i===active?' active':''), onClick:e=>{e.preventDefault(); setActive(i);} }, tabLabel(i))
+            )
+          ).concat(canAdd ? [
+            React.createElement('li', { className:'nav-item', key:'add' },
+              React.createElement('button', { type:'button', className:'nav-link', onClick: ()=>{ onAddClick(); setActive(items.length); } }, '+')
+            )
+          ] : [])
+        ),
+        items.map((item,i)=>
+          React.createElement('div', { key:item.key, style:{ display: i===active?'block':'none', border:'1px solid #dee2e6', borderTop:'none', padding:'10px' } },
+            [
+              item.children,
+              item.hasRemove ? React.createElement('div',{className:'mt-2'},
+                React.createElement('button',{type:'button',className:'btn btn-outline-danger btn-sm', onClick:item.onDropIndexClick(item.index)},'Удалить визит')
+              ) : null
+            ]
+          )
+        )
+      );
+    }
+
     // === Конфиг списка форм (соответствует структуре ./forms/<key>/) ===
     const FORMS = [
       { key: 'user',              label: 'Пользователь' },
@@ -233,6 +272,7 @@
     </div>
     <div id="grid-${key}" class="ag-theme-quartz"></div>
   `;
+
   if (typeof tablesEl !== 'undefined') {
     (container || tablesEl).appendChild(sec);
   }
@@ -304,7 +344,9 @@
       let records = [];
 
       function renderTabs(){
+
         if (records.length) data = records.map(r=> r.getData());
+
         records = [];
         tabsEl.innerHTML='';
         const nav = document.createElement('ul');
@@ -425,7 +467,7 @@
           arraySpecs.forEach(s => { result[s.key] = s.getData(); });
           alert('Submitted:' + JSON.stringify(result, null, 2));
         };
-        ReactDOM.render(React.createElement(Form, { schema: baseSchema, uiSchema, formData, onSubmit }, actions), appEl);
+        ReactDOM.render(React.createElement(Form, { schema: baseSchema, uiSchema, formData, templates:{ ArrayFieldTemplate: TabArrayFieldTemplate }, onSubmit }, actions), appEl);
 
         // отрисовать массивы
         tablesEl.innerHTML='';
