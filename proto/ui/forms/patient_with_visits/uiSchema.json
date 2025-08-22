@@ -1,6 +1,6 @@
 {
   "visits": {
-    "ui:options": { "tabs": true },
+    "ui:options": { "tabs": true, "tabNameField": "visit_date" },
     "items": {
       "hospital_tests": {
         "items": {
