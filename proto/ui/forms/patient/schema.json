@@ -2,7 +2,7 @@
   "title": "Пациент",
   "description": "Общие данные пациента",
   "type": "object",
-  "required": ["code", "last_name", "first_name", "sex"],
+  "required": ["code", "last_name", "sex"],
   "properties": {
     "code": { "type": "string", "title": "Код пациента" },
     "last_name": { "type": "string", "title": "Фамилия" },
@@ -14,6 +14,16 @@
       "enumNames" : ["Мужской", "Женский", "Другое/не указано"]
     },
     "birth_date": { "type": "string", "format": "date", "title": "Дата рождения" },
+    "project" : {
+      "title": "Проект",
+      "enum": [1, 2],
+      "enumNames" : ["Проект №1", "Проект №2"]
+    },
+    "nationality" : {
+      "title": "Национальность (этническая группа)",
+      "enum": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+      "enumNames" : ["русские", "татары", "чеченцы", "башкиры", "чуваши", "аварцы", "армяне", "украинцы", "дарнинцы", "казахи"]
+    },
     "center_id": {
       "title": "Клинический центр",
       "enum": [1, 2],
@@ -24,7 +34,21 @@
       "enum" : [1, 2],
       "enumNames": ["I10 — Гипертензия", "E11 — Сахарный диабет 2 типа"]
     },
-    "diagnosis_text": { "type": "string", "title": "Диагноз (текст)" },
+    "secondary_icd10": { 
+      "type": "array", 
+      "title": "Сопутствующие заболевания",
+      "items": {
+        "type": "object",
+        "required" : [],
+        "properties" : {
+          "icd10": {
+            "title" : "Заболевание",
+            "enum" : [1, 2],
+            "enumNames" : ["I10 — Гипертензия", "E11 — Сахарный диабет 2 типа"]
+          }
+        }
+      } 
+    },
     "genome_file_url": { "type": "string", "format": "uri", "title": "Файл генома (URL)" },
 
     "inhibitor_therapy": {

@@ -4,8 +4,15 @@
   "first_name": "Пётр",
   "sex": "male",
   "center_id": 1,
+  "project": 1,
+  "nationality": 1,
   "primary_icd10_id": 1,
-  "inhibitor_therapy": [
-    { "inn_id": 1, "dose_id": 2 }
+  "secondary_icd10": [
+    {
+      "icd_10": 1
+    },
+    {
+      "icd_10": 2
+    }
   ]
 }
