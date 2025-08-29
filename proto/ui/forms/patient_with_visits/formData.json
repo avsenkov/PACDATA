@@ -9,7 +9,9 @@
       "age_at_visit_years": 45,
       "weight_kg": 82.5,
       "height_cm": 178,
+      "BMI" : 26, 
       "clinical_outcome_id": 1,
+      "next_visit_date" : "2024-02-20",
       "drug_intakes": [ { "drug_id": 1, "dose_id": 2 } ],
       "hospital_tests": [ { "name": "ALT (U/L)", "value_text": "32" } ],
       "lab_concentrations": [ { "drug_id": 1, "value_num": 1.4, "unit_id": 3 } ]
@@ -19,9 +21,12 @@
       "age_at_visit_years": 46,
       "weight_kg": 83.0,
       "height_cm": 178,
+      "BMI" : 26.2, 
       "clinical_outcome_id": 2,
+      "next_visit_date" : "2024-03-15",
       "drug_intakes": [ { "drug_id": 2, "dose_id": 1 } ],
       "hospital_tests": [ { "name": "AST (U/L)", "value_text": "28" } ],
+      "instrumental_tests": [ { "name": "УЗИ печени", "comment": "Здесь какое-то описание", "resolution":"Здесь результаты" } ],
       "lab_phenotyping": [ { "drug_id": 2, "metabolites": [ { "metabolite_name": "M1", "value_num": 0.5, "unit_id": 3 } ] } ]
     },
     {
@@ -29,6 +34,7 @@
       "age_at_visit_years": 46,
       "weight_kg": 84.2,
       "height_cm": 178,
+      "BMI" : 26.6, 
       "clinical_outcome_id": 1,
       "drug_intakes": [ { "drug_id": 1, "dose_id": 2 } ],
       "hospital_tests": [ { "name": "Creatinine (mg/dL)", "value_text": "1.1" } ],

@@ -18,8 +18,9 @@
           "age_at_visit_years": { "type": "number", "title": "Возраст (лет)", "minimum": 0 },
           "weight_kg": { "type": "number", "title": "Вес (кг)", "minimum": 0 },
           "height_cm": { "type": "number", "title": "Рост (см)", "minimum": 0 },
+          "BMI" : { "type": "number", "title": "ИМТ", "minimum": 0 },
           "additional_disease_text": { "type": "string", "title": "Доп. заболевание" },
-          "referral_text": { "type": "string", "title": "Направление" },
+          "next_visit_date": { "type": "string", "format": "date", "title": "Предполагаемая дата следующего визита" },
           "clinical_outcome_id": {
             "title": "Клинический исход",
             "enum": [1, 2, 3],
@@ -47,13 +48,26 @@
           },
           "hospital_tests": {
             "type": "array",
-            "title": "Больничные анализы",
+            "title": "Лабораторные исследования",
             "items": {
               "type": "object",
               "required": ["name", "value_text"],
               "properties": {
                 "name": { "type": "string", "title": "Название (c ед.)", "examples": ["ALT (U/L)"] },
                 "value_text": { "type": "string", "title": "Значение" }
+              }
+            }
+          },
+          "instrumental_tests": {
+            "type": "array",
+            "title": "Инструментальные исследования",
+            "items": {
+              "type": "object",
+              "required": ["name", "value_text"],
+              "properties": {
+                "name": { "type": "string", "title": "Название", "examples": ["УЗИ","МРТ","Трузи"] },
+                "comment": { "type": "string", "title": "Описание" },
+                "resolution": {"type": "string", "title": "Заключение" }
               }
             }
           },
@@ -66,11 +80,7 @@
               "properties": {
                 "analyte_name": { "type": "string", "title": "Маркер/ген/вариант" },
                 "value_text": { "type": "string", "title": "Значение" },
-                "unit_id": {
-                  "title": "Ед. изм.",
-                  "enum": [1, 2],
-                  "enumNames" : ["ед.", "мг/л"]
-                }
+                "interpretation" : {"type": "string", "title": "Значение"}
               }
             }
           },
