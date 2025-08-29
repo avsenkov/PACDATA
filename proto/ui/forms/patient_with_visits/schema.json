@@ -1,7 +1,7 @@
 {
   "title": "Пациент с визитами",
   "type": "object",
-  "required": ["code", "last_name", "first_name"],
+  "required": ["code", "last_name"],
   "properties": {
     "code": { "type": "string", "title": "Код пациента" },
     "last_name": { "type": "string", "title": "Фамилия" },

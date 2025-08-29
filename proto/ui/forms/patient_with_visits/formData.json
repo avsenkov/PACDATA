@@ -5,7 +5,7 @@
   "middle_name": "Петрович",
   "visits": [
     {
-      "visit_date": "2024-01-10",
+      "visit_date": "№0 2024-01-10",
       "age_at_visit_years": 45,
       "weight_kg": 82.5,
       "height_cm": 178,
@@ -15,7 +15,7 @@
       "lab_concentrations": [ { "drug_id": 1, "value_num": 1.4, "unit_id": 3 } ]
     },
     {
-      "visit_date": "2024-02-20",
+      "visit_date": "№1 2024-02-20",
       "age_at_visit_years": 46,
       "weight_kg": 83.0,
       "height_cm": 178,
@@ -25,7 +25,7 @@
       "lab_phenotyping": [ { "drug_id": 2, "metabolites": [ { "metabolite_name": "M1", "value_num": 0.5, "unit_id": 3 } ] } ]
     },
     {
-      "visit_date": "2024-03-15",
+      "visit_date": "№2 2024-03-15",
       "age_at_visit_years": 46,
       "weight_kg": 84.2,
       "height_cm": 178,
