@@ -49,27 +49,6 @@
         }
       } 
     },
-    "genome_file_url": { "type": "string", "format": "uri", "title": "Файл генома (URL)" },
-
-    "inhibitor_therapy": {
-      "type": "array",
-      "title": "Назначения прямых ингибиторов",
-      "items": {
-        "type": "object",
-        "required": ["inn_id"],
-        "properties": {
-          "inn_id": {
-            "title": "МНН ингибитора",
-            "enum": [1, 2],
-            "enumNames": ["Ингибитор A", "Ингибитор B"]
-          },
-          "dose_id": {
-            "title": "Доза",
-            "enum": [1, 2],
-            "enumNames": ["5 mg", "10 mg"]
-          }
-        }
-      }
-    }
+    "genome_file_url": { "type": "string", "format": "uri", "title": "Файл генома (URL)" }
   }
 }

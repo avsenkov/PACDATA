@@ -1,9 +1,9 @@
 {
   "diagnosis_text": { "ui:widget": "textarea", "ui:options": { "rows": 3 } },
-  "genome_file_url": { "ui:help": "Например: https://…/genome.vcf.gz" },
-  "inhibitor_therapy": {
-    "items": {
-      "dose_id": { "ui:placeholder": "Выберите дозу" }
-    }
-  }
+  "genome_file_url": { "ui:help": "Например: https://…/genome.vcf.gz" }
+  //"inhibitor_therapy": {
+  //  "items": {
+  //    "dose_id": { "ui:placeholder": "Выберите дозу" }
+  //  }
+  //}
 }
