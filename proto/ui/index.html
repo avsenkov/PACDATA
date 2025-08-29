@@ -75,6 +75,45 @@
     const Form = RJSF && (RJSF.default || RJSF);
     if (!Form) { document.getElementById('app').innerHTML = '<div class="alert alert-danger">Не удалось загрузить rjsf</div>'; return; }
 
+    const DefaultArrayFieldTemplate = Form.defaultProps && Form.defaultProps.templates && Form.defaultProps.templates.ArrayFieldTemplate;
+
+    function TabArrayFieldTemplate(props){
+      const opts = (props.uiSchema && props.uiSchema['ui:options']) || {};
+      if (!opts.tabs || !DefaultArrayFieldTemplate) {
+        return React.createElement(DefaultArrayFieldTemplate || React.Fragment, props);
+      }
+      const { items, canAdd, onAddClick, formData } = props;
+      const [active, setActive] = React.useState(0);
+      const titleField = opts.tabNameField;
+      function tabLabel(i){
+        if (titleField && formData && formData[i] && formData[i][titleField]) return formData[i][titleField];
+        return `Визит ${i+1}`;
+      }
+      return React.createElement('div', {},
+        React.createElement('ul', { className:'nav nav-tabs mb-2' },
+          items.map((item, i) =>
+            React.createElement('li', { className:'nav-item', key:item.key },
+              React.createElement('a', { href:'#', className:'nav-link'+(i===active?' active':''), onClick:e=>{e.preventDefault(); setActive(i);} }, tabLabel(i))
+            )
+          ).concat(canAdd ? [
+            React.createElement('li', { className:'nav-item', key:'add' },
+              React.createElement('button', { type:'button', className:'nav-link', onClick: ()=>{ onAddClick(); setActive(items.length); } }, '+')
+            )
+          ] : [])
+        ),
+        items.map((item,i)=>
+          React.createElement('div', { key:item.key, style:{ display: i===active?'block':'none', border:'1px solid #dee2e6', borderTop:'none', padding:'10px' } },
+            [
+              item.children,
+              item.hasRemove ? React.createElement('div',{className:'mt-2'},
+                React.createElement('button',{type:'button',className:'btn btn-outline-danger btn-sm', onClick:item.onDropIndexClick(item.index)},'Удалить визит')
+              ) : null
+            ]
+          )
+        )
+      );
+    }
+
     // === Конфиг списка форм (соответствует структуре ./forms/<key>/) ===
     const FORMS = [
       { key: 'user',              label: 'Пользователь' },
@@ -119,13 +158,15 @@
     }
 
     // Разделяем схему: скалярные свойства -> в rjsf, массивы -> в AG Grid
-    function splitSchema(schema){
+    function splitSchema(schema, uiSchema){
       const base = JSON.parse(JSON.stringify(schema||{}));
       const arrays = [];
       if (base && base.properties){
         for (const [key, prop] of Object.entries(base.properties)){
           if (prop && prop.type === 'array' && prop.items && (prop.items.type === 'object' || prop.items.properties)){
-            arrays.push({ key, title: prop.title || key, schema: prop });
+            const ui = uiSchema && uiSchema[key];
+            const useTabs = ui && ui['ui:options'] && ui['ui:options'].tabs;
+            arrays.push({ key, title: prop.title || key, schema: prop, uiSchema: ui || {}, useTabs });
           }
         }
         // удалить массивы из rjsf-схемы
@@ -220,7 +261,7 @@
     }
 
     // Создать секцию-таблицу на странице и вернуть Grid API
-    function mountGrid(sectionTitle, key, cols, rows, blankRow) {
+    function mountGrid(sectionTitle, key, cols, rows, blankRow, container) {
   // создаём секцию с заголовком и контейнером грида
   const sec = document.createElement('div');
   sec.className = 'grid-section';
@@ -231,8 +272,9 @@
     </div>
     <div id="grid-${key}" class="ag-theme-quartz"></div>
   `;
-  if (tablesEl) {
-    tablesEl.appendChild(sec);
+
+  if (typeof tablesEl !== 'undefined') {
+    (container || tablesEl).appendChild(sec);
   }
 
   const el = document.getElementById(`grid-${key}`);
@@ -285,10 +327,119 @@
 }
 
 
+    function mountTabbedArray(sectionTitle, key, arrSchema, arrUi, initialData) {
+      const sec = document.createElement('div');
+      sec.className = 'grid-section';
+      sec.innerHTML = `
+        <div class="grid-head" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <h4 class="mb-0" style="font-family:inherit;font-weight:600;">${sectionTitle}</h4>
+          <button class="btn btn-sm btn-success" id="btn-add-${key}">+ Добавить визит</button>
+        </div>
+        <div id="tabs-${key}"></div>
+      `;
+      tablesEl.appendChild(sec);
+      const tabsEl = document.getElementById(`tabs-${key}`);
+      let active = 0;
+      let data = Array.isArray(initialData) ? initialData.slice() : [];
+      let records = [];
 
-    // состояние спецификаций таблиц и API текущей формы
-    let tableSpecs = [];
-    let apis = {}; // key -> gridApi
+      function renderTabs(){
+
+        if (records.length) data = records.map(r=> r.getData());
+
+        records = [];
+        tabsEl.innerHTML='';
+        const nav = document.createElement('ul');
+        nav.className = 'nav nav-tabs';
+        tabsEl.appendChild(nav);
+        const content = document.createElement('div');
+        tabsEl.appendChild(content);
+
+        data.forEach((d, idx)=>{
+          const li = document.createElement('li');
+          li.className = 'nav-item';
+          const a = document.createElement('a');
+          a.className = 'nav-link'+(idx===active?' active':'');
+          a.href = '#';
+          li.appendChild(a);
+          nav.appendChild(li);
+          a.onclick = e=>{ e.preventDefault(); active=idx; renderTabs(); };
+
+          const pane = document.createElement('div');
+          pane.style.display = idx===active?'block':'none';
+          pane.style.border = '1px solid #dee2e6';
+          pane.style.borderTop = 'none';
+          pane.style.padding = '10px';
+          content.appendChild(pane);
+
+          const rec = renderVisitPane(pane, idx, d, a);
+          records.push(rec);
+        });
+      }
+
+      function renderVisitPane(pane, idx, d, anchor){
+        let visitData = JSON.parse(JSON.stringify(d || {}));
+        const innerSpecs = [];
+        const innerApis = {};
+        const { baseSchema: vBase, arrays: vArrays } = splitSchema(arrSchema.items, arrUi && arrUi.items);
+        const formDiv = document.createElement('div');
+        pane.appendChild(formDiv);
+        function updateLabel(){
+          const titleField = arrUi && arrUi['ui:options'] && arrUi['ui:options'].tabNameField;
+          let label = `Визит ${idx+1}`;
+          if (titleField && visitData && visitData[titleField]) label = visitData[titleField];
+          anchor.textContent = label;
+        }
+        const onChange = ({formData})=>{ visitData = formData; updateLabel(); };
+        ReactDOM.render(React.createElement(Form, { schema: vBase, uiSchema: arrUi && arrUi.items, formData: visitData, onChange }), formDiv);
+        vArrays.forEach(vArr=>{
+          const itemProps = (vArr.schema.items && vArr.schema.items.properties) || {};
+          const hasOneSubArray = Object.values(itemProps).filter(p=> p && p.type==='array').length === 1;
+          let spec;
+          if (hasOneSubArray) spec = buildFlattenTableSpec(vArr.key, vArr.schema, visitData[vArr.key]);
+          else spec = buildSimpleTableSpec(vArr.key, vArr.schema, visitData[vArr.key]);
+          const gridKey = `${key}-${idx}-${vArr.key}`;
+          const api = mountGrid(vArr.title || vArr.key, gridKey, spec.cols, spec.rows, spec.blank, pane);
+          innerSpecs.push({ key: vArr.key, spec });
+          innerApis[vArr.key] = api;
+        });
+        const removeBtn = document.createElement('button');
+        removeBtn.type='button';
+        removeBtn.className='btn btn-outline-danger btn-sm mt-2';
+        removeBtn.textContent='Удалить визит';
+        removeBtn.onclick = ()=>{
+          data = records.map(r=> r.getData());
+          data.splice(idx,1);
+          if (active >= data.length) active = data.length-1;
+          renderTabs();
+        };
+        pane.appendChild(removeBtn);
+        updateLabel();
+        return {
+          getData: ()=>{
+            const res = { ...visitData };
+            innerSpecs.forEach(s=>{
+              const rows=[];
+              const api = innerApis[s.key];
+              if (api) api.forEachNode(n=> rows.push({ ...n.data }));
+              res[s.key] = s.spec.regroup ? s.spec.regroup(rows) : rows;
+            });
+            return res;
+          }
+        };
+      }
+
+      const addBtn = document.getElementById(`btn-add-${key}`);
+      if (addBtn) addBtn.onclick = ()=>{ data = records.map(r=> r.getData()); data.push({}); active = data.length-1; renderTabs(); };
+
+      renderTabs();
+
+      return { getData: ()=> records.map(r=> r.getData()) };
+    }
+
+
+    // состояние спецификаций массивов текущей формы
+    let arraySpecs = [];
 
     // Основной рендер
     async function render(name){
@@ -304,7 +455,7 @@
         titleEl.textContent = (schema.title||name) + (schema.description? ' — '+schema.description : '');
 
         // делим схему: поля в rjsf, массивы в гриды
-        const { baseSchema, arrays } = splitSchema(schema);
+        const { baseSchema, arrays } = splitSchema(schema, uiSchema);
 
         // рендер rjsf
         const actions = React.createElement('div',{className:'actions'},
@@ -312,34 +463,33 @@
           React.createElement('button',{type:'reset', className:'btn btn-outline-secondary'},'Reset')
         );
         const onSubmit = ({formData: scalarData})=>{
-          // собрать данные из таблиц
           const result = { ...scalarData };
-          tableSpecs.forEach(s => {
-            const list = [];
-            const api = apis[s.key];
-            if (api) api.forEachNode(n=> list.push({...n.data}));
-            result[s.key] = s.regroup(list);
-          });
+          arraySpecs.forEach(s => { result[s.key] = s.getData(); });
           alert('Submitted:' + JSON.stringify(result, null, 2));
         };
-        ReactDOM.render(React.createElement(Form, { schema: baseSchema, uiSchema, formData, onSubmit }, actions), appEl);
+        ReactDOM.render(React.createElement(Form, { schema: baseSchema, uiSchema, formData, templates:{ ArrayFieldTemplate: TabArrayFieldTemplate }, onSubmit }, actions), appEl);
 
-        // отрисовать таблицы
+        // отрисовать массивы
         tablesEl.innerHTML='';
-        Object.values(apis).forEach(api=> api && api.destroy && api.destroy());
-        apis = {}; // сбросить
-        tableSpecs = []; // сбросить
+        arraySpecs = [];
 
         for (const arr of arrays){
-          // если внутри есть один подмассив — делаем flatten, иначе — обычная таблица
+          if (arr.useTabs) {
+            const spec = mountTabbedArray(arr.title || arr.key, arr.key, arr.schema, arr.uiSchema, formData[arr.key]);
+            arraySpecs.push({ key: arr.key, getData: spec.getData });
+            continue;
+          }
           const itemProps = (arr.schema.items && arr.schema.items.properties) || {};
           const hasOneSubArray = Object.values(itemProps).filter(p=> p && p.type==='array').length === 1;
           let spec;
           if (hasOneSubArray) spec = buildFlattenTableSpec(arr.key, arr.schema, formData[arr.key]);
           else spec = buildSimpleTableSpec(arr.key, arr.schema, formData[arr.key]);
           const api = mountGrid(arr.title || arr.key, spec.key, spec.cols, spec.rows, spec.blank);
-          apis[spec.key] = api;
-          tableSpecs.push(spec);
+          arraySpecs.push({ key: spec.key, getData: () => {
+            const list = [];
+            if (api) api.forEachNode(n=> list.push({ ...n.data }));
+            return spec.regroup(list);
+          }});
         }
       } catch (e) {
         console.error(e);
