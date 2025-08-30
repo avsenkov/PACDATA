@@ -24,7 +24,7 @@
       "BMI" : 26.2, 
       "clinical_outcome_id": 2,
       "next_visit_date" : "2024-03-15",
-      "drug_intakes": [ { "drug_id": 2, "dose_id": 1 }, {"drug_id": 2, "dose_id": 1}],
+      "drug_intakes": [ { "drug_id": 1, "dose_id": 1 }, {"drug_id": 2, "dose_id": 2}],
       "hospital_tests": [ { "name": "AST (U/L)", "value_text": "28" } ],
       "instrumental_tests": [ { "name": "УЗИ печени", "comment": "Здесь какое-то описание", "resolution":"Здесь результаты" } ],
       "lab_phenotyping": [ { "drug_id": 2, "metabolites": [ { "metabolite_name": "M1", "value_num": 0.5, "unit_id": 3 } ] } ]
