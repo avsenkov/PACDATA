@@ -38,7 +38,7 @@
           "age_at_visit_years": { "type": "number", "title": "Возраст (лет)", "minimum": 0 },
           "weight_kg": { "type": "number", "title": "Вес (кг)", "minimum": 0 },
           "height_cm": { "type": "number", "title": "Рост (см)", "minimum": 0 },
-          "BMI" : { "type": "number", "title": "ИМТ", "minimum": 0 }, //вычисляемое
+          "BMI" : { "type": "number", "title": "ИМТ", "minimum": 0 }, 
           "additional_disease_text": { "type": "string", "title": "Доп. заболевание" },
           "next_visit_date": { "type": "string", "format": "date", "title": "Предполагаемая дата следующего визита" },
           "clinical_outcome_id": {
