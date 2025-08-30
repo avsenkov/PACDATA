@@ -1,12 +1,15 @@
 {
   "ui:charts": [
     {
-      "type": "line",
-      "title": "Вес по визитам",
+      "type": "lab_series",
+      "title": "Лабораторные исследования",
+      "selectLabel": "Тип исследования",
       "fromArray": "visits",
       "xField": "visit_date",
-      "yField": "weight_kg",
-      "yLabel": "Вес (кг)"
+      "nestedArray": "hospital_tests",
+      "nestedLabelField": "name",
+      "nestedValueField": "value_text",
+      "includeNames": ["Creatinine (mg/dL)", "AST (U/L)"]
     }
   ],
   "visits": {
@@ -21,4 +24,3 @@
     }
   }
 }
-

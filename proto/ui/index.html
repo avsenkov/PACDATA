@@ -478,6 +478,87 @@
         const chartDefs = (uiSchema && uiSchema['ui:charts']) || (formData && formData._charts) || [];
         if (chartsEl && Array.isArray(chartDefs) && chartDefs.length && window.Chart) {
           chartDefs.forEach((cfg, i) => {
+            // Special mode: lab test series across visits with a selector
+            if (cfg.type === 'lab_series') {
+              const srcArrayKey = cfg.fromArray || 'visits';
+              const xField = cfg.xField || 'visit_date';
+              const nestedArray = cfg.nestedArray || 'hospital_tests';
+              const nestedLabelField = cfg.nestedLabelField || 'name';
+              const nestedValueField = cfg.nestedValueField || 'value_text';
+              const selectLabel = cfg.selectLabel || 'Тип исследования';
+              const title = cfg.title || 'Лабораторные исследования';
+              const visits = (formData && formData[srcArrayKey]) || [];
+              if (!Array.isArray(visits) || !visits.length) return;
+
+              // Collect unique test names
+              let names = [];
+              visits.forEach(v => {
+                const arr = (v && v[nestedArray]) || [];
+                if (Array.isArray(arr)) arr.forEach(t => { const nm = t && t[nestedLabelField]; if (nm && !names.includes(nm)) names.push(nm); });
+              });
+              if (Array.isArray(cfg.includeNames) && cfg.includeNames.length) {
+                names = names.filter(n => cfg.includeNames.includes(n));
+              }
+              if (!names.length) return;
+
+              // Build container with selector and canvas
+              const sec = document.createElement('div');
+              sec.className = 'mb-3';
+              sec.innerHTML = `
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <h5 class="mb-0" style="font-weight:600;">${title}</h5>
+                  <div class="form-inline">
+                    <label class="mr-2" for="chart-sel-${i}">${selectLabel}:</label>
+                    <select id="chart-sel-${i}" class="form-control form-control-sm"></select>
+                  </div>
+                </div>
+                <div style="height:300px"><canvas id="chart-${i}"></canvas></div>
+              `;
+              chartsEl.appendChild(sec);
+              const sel = sec.querySelector(`#chart-sel-${i}`);
+              sel.innerHTML = names.map(n => `<option value="${n}">${n}</option>`).join('');
+              const ctx = sec.querySelector(`#chart-${i}`);
+
+              function seriesFor(name){
+                const labels = visits.map(v => (v && v[xField] != null) ? String(v[xField]) : '');
+                const data = visits.map(v => {
+                  const arr = (v && v[nestedArray]) || [];
+                  if (!Array.isArray(arr)) return null;
+                  const rec = arr.find(t => t && t[nestedLabelField] === name);
+                  if (!rec) return null;
+                  const val = rec[nestedValueField];
+                  const n = (typeof val === 'number') ? val : Number(val);
+                  return isNaN(n) ? null : n;
+                });
+                return { labels, data };
+              }
+
+              const initial = sel.value || names[0];
+              const ser = seriesFor(initial);
+              let chart;
+              try {
+                chart = new Chart(ctx, {
+                  type: 'line',
+                  data: { labels: ser.labels, datasets: [{ label: initial, data: ser.data, fill: false, borderColor: '#3e95cd', backgroundColor: 'rgba(62,149,205,0.3)', tension: 0.2, pointRadius: 3 }] },
+                  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { x: { ticks: { autoSkip: true, maxRotation: 0 } }, y: { beginAtZero: false } } }
+                });
+              } catch(e) { /* ignore chart errors */ }
+
+              sel.onchange = () => {
+                const name = sel.value;
+                const s = seriesFor(name);
+                if (chart) {
+                  chart.data.labels = s.labels;
+                  chart.data.datasets[0].label = name;
+                  chart.data.datasets[0].data = s.data;
+                  chart.update();
+                }
+              };
+
+              return; // done with this chart cfg
+            }
+
+            // Default simple XY from a top-level array
             const type = cfg.type || 'line';
             const srcArrayKey = cfg.fromArray;
             const xField = cfg.xField;
@@ -495,38 +576,14 @@
             });
             const sec = document.createElement('div');
             sec.className = 'mb-3';
-            sec.innerHTML = `<h5 class="mb-2" style="font-weight:600;">${title}</h5><div style="height:300px"><canvas id="chart-${i}"></canvas></div>`;
+            sec.innerHTML = `<h5 class=\"mb-2\" style=\"font-weight:600;\">${title}</h5><div style=\"height:300px\"><canvas id=\"chart-${i}\"></canvas></div>`;
             chartsEl.appendChild(sec);
             const ctx = sec.querySelector(`#chart-${i}`);
             try{
               new Chart(ctx, {
                 type,
-                data: {
-                  labels,
-                  datasets: [
-                    {
-                      label: yLabel,
-                      data,
-                      fill: false,
-                      borderColor: '#3e95cd',
-                      backgroundColor: 'rgba(62,149,205,0.3)',
-                      tension: 0.2,
-                      pointRadius: 3
-                    }
-                  ]
-                },
-                options: {
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: { position: 'top' },
-                    title: { display: false }
-                  },
-                  scales: {
-                    x: { ticks: { autoSkip: true, maxRotation: 0 } },
-                    y: { beginAtZero: false }
-                  }
-                }
+                data: { labels, datasets: [{ label: yLabel, data, fill: false, borderColor: '#3e95cd', backgroundColor: 'rgba(62,149,205,0.3)', tension: 0.2, pointRadius: 3 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' }, title: { display: false } }, scales: { x: { ticks: { autoSkip: true, maxRotation: 0 } }, y: { beginAtZero: false } } }
               });
             } catch(e) { /* ignore chart errors */ }
           });
