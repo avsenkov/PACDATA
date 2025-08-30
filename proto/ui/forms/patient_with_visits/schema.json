@@ -1,5 +1,5 @@
 {
-  "title": "Пациент с визитами",
+  "title": "Визиты",
   "type": "object",
   "required": ["code", "last_name"],
   "properties": {
@@ -7,6 +7,26 @@
     "last_name": { "type": "string", "title": "Фамилия" },
     "first_name": { "type": "string", "title": "Имя" },
     "middle_name": { "type": "string", "title": "Отчество" },
+    "primary_icd10_id": {
+      "title": "Основное заболевание (МКБ)",
+      "enum" : [1, 2],
+      "enumNames": ["I10 — Гипертензия", "E11 — Сахарный диабет 2 типа"]
+    },
+    "secondary_icd10": { 
+      "type": "array", 
+      "title": "Сопутствующие заболевания",
+      "items": {
+        "type": "object",
+        "required" : [],
+        "properties" : {
+          "icd10": {
+            "title" : "Заболевание",
+            "enum" : [1, 2],
+            "enumNames" : ["I10 — Гипертензия", "E11 — Сахарный диабет 2 типа"]
+          }
+        }
+      } 
+    },
     "visits": {
       "type": "array",
       "title": "Визиты",
@@ -18,7 +38,7 @@
           "age_at_visit_years": { "type": "number", "title": "Возраст (лет)", "minimum": 0 },
           "weight_kg": { "type": "number", "title": "Вес (кг)", "minimum": 0 },
           "height_cm": { "type": "number", "title": "Рост (см)", "minimum": 0 },
-          "BMI" : { "type": "number", "title": "ИМТ", "minimum": 0 },
+          "BMI" : { "type": "number", "title": "ИМТ", "minimum": 0 }, //вычисляемое
           "additional_disease_text": { "type": "string", "title": "Доп. заболевание" },
           "next_visit_date": { "type": "string", "format": "date", "title": "Предполагаемая дата следующего визита" },
           "clinical_outcome_id": {
@@ -38,11 +58,20 @@
                   "enum" : [1, 2],
                   "enumNames" : ["Препарат X", "Препарат Y"]
                 },
-                "dose_id": {
-                  "title": "Доза",
+                "dose": { "type": "string", "title": "Дозировка" },
+                "unit_id": {
+                  "title": "Дозировка в",
+                  "enum": [1, 2],
+                  "enumNames": ["мг", "мкг"]
+                }, 
+                "NumPeriod" : { "type": "string", "title": "Принимать раз" },
+                "period" : {
+                  "title": "в период",
                   "enum" : [1, 2],
-                  "enumNames" : ["5 mg", "10 mg"]
-                }
+                  "enumNames" : ["день", "2 дня"]
+                },
+                "Longitude" : { "type": "string", "title": "Продолжительность приема" },
+                "Begining" : { "type": "string", "title": "Начало приема" }
               }
             }
           },
