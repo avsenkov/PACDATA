@@ -80,7 +80,7 @@
               "properties": {
                 "analyte_name": { "type": "string", "title": "Маркер/ген/вариант" },
                 "value_text": { "type": "string", "title": "Значение" },
-                "interpretation" : {"type": "string", "title": "Значение"}
+                "interpretation" : {"type": "string", "title": "Интерпретация"}
               }
             }
           },
