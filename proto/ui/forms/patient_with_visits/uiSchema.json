@@ -1,4 +1,14 @@
 {
+  "ui:charts": [
+    {
+      "type": "line",
+      "title": "Вес по визитам",
+      "fromArray": "visits",
+      "xField": "visit_date",
+      "yField": "weight_kg",
+      "yLabel": "Вес (кг)"
+    }
+  ],
   "visits": {
     "ui:options": { "tabs": true, "tabNameField": "visit_date" },
     "items": {
@@ -11,3 +21,4 @@
     }
   }
 }
+

@@ -20,6 +20,8 @@
 
   <!-- rjsf v4 (UMD) -->
   <script src="https://unpkg.com/@rjsf/core@4.2.2/dist/react-jsonschema-form.js"></script>
+  <!-- Chart.js (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 
   <style>
     body { padding: 24px; }
@@ -63,6 +65,7 @@
 
     <!-- RJSF-форма (только скалярные поля: строки/числа/даты/селекты) -->
     <div id="app"></div>
+    <div id="charts" class="mb-3"></div>
 
     <!-- Таблицы для всех отношений 1→N -->
     <div id="tables"></div>
@@ -134,6 +137,7 @@
 
     const titleEl  = document.getElementById('title');
     const appEl    = document.getElementById('app');
+    const chartsEl = document.getElementById('charts');
     const tablesEl = document.getElementById('tables');
 
     // === helpers ===
@@ -468,6 +472,65 @@
           alert('Submitted:' + JSON.stringify(result, null, 2));
         };
         ReactDOM.render(React.createElement(Form, { schema: baseSchema, uiSchema, formData, templates:{ ArrayFieldTemplate: TabArrayFieldTemplate }, onSubmit }, actions), appEl);
+
+        // Charts rendering (between form and tables)
+        if (chartsEl) chartsEl.innerHTML = '';
+        const chartDefs = (uiSchema && uiSchema['ui:charts']) || (formData && formData._charts) || [];
+        if (chartsEl && Array.isArray(chartDefs) && chartDefs.length && window.Chart) {
+          chartDefs.forEach((cfg, i) => {
+            const type = cfg.type || 'line';
+            const srcArrayKey = cfg.fromArray;
+            const xField = cfg.xField;
+            const yField = cfg.yField;
+            const title = cfg.title || (cfg.yLabel || yField || 'Chart');
+            const yLabel = cfg.yLabel || (yField || 'Value');
+            if (!srcArrayKey || !xField || !yField) return;
+            const src = (formData && formData[srcArrayKey]) || [];
+            if (!Array.isArray(src) || !src.length) return;
+            const labels = src.map(r => r && r[xField] != null ? String(r[xField]) : '');
+            const data = src.map(r => {
+              const v = r && r[yField];
+              const n = (typeof v === 'number') ? v : Number(v);
+              return isNaN(n) ? null : n;
+            });
+            const sec = document.createElement('div');
+            sec.className = 'mb-3';
+            sec.innerHTML = `<h5 class="mb-2" style="font-weight:600;">${title}</h5><div style="height:300px"><canvas id="chart-${i}"></canvas></div>`;
+            chartsEl.appendChild(sec);
+            const ctx = sec.querySelector(`#chart-${i}`);
+            try{
+              new Chart(ctx, {
+                type,
+                data: {
+                  labels,
+                  datasets: [
+                    {
+                      label: yLabel,
+                      data,
+                      fill: false,
+                      borderColor: '#3e95cd',
+                      backgroundColor: 'rgba(62,149,205,0.3)',
+                      tension: 0.2,
+                      pointRadius: 3
+                    }
+                  ]
+                },
+                options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: { position: 'top' },
+                    title: { display: false }
+                  },
+                  scales: {
+                    x: { ticks: { autoSkip: true, maxRotation: 0 } },
+                    y: { beginAtZero: false }
+                  }
+                }
+              });
+            } catch(e) { /* ignore chart errors */ }
+          });
+        }
 
         // отрисовать массивы
         tablesEl.innerHTML='';
