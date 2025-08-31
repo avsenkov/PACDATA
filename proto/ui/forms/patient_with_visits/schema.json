@@ -1,7 +1,13 @@
 {
   "title": "Визиты",
   "type": "object",
-  "required": ["code", "last_name"],
+  "required": [
+    "code",
+    "last_name",
+    "consent_general_signed",
+    "consent_trial_signed",
+    "consent_genetic_material_signed"
+  ],
   "properties": {
     "code": { "type": "string", "title": "Код пациента" },
     "last_name": { "type": "string", "title": "Фамилия" },

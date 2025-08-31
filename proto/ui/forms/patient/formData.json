@@ -6,6 +6,9 @@
   "center_id": 1,
   "project": 1,
   "nationality": 1,
+  "consent_general_signed": false,
+  "consent_trial_signed": false,
+  "consent_genetic_material_signed": false,
   "primary_icd10_id": 1,
   "secondary_icd10": [{"icd10": 1},{"icd10": 2}]
 }

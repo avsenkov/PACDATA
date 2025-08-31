@@ -2,12 +2,27 @@
   "title": "Пациент",
   "description": "Общие данные пациента",
   "type": "object",
-  "required": ["code", "last_name", "sex"],
+  "required": ["code", "last_name", "sex", "consent_general_signed", "consent_trial_signed", "consent_genetic_material_signed", ],
   "properties": {
     "code": { "type": "string", "title": "Код пациента" },
     "last_name": { "type": "string", "title": "Фамилия" },
     "first_name": { "type": "string", "title": "Имя" },
     "middle_name": { "type": "string", "title": "Отчество" },
+    "consent_general_signed": {
+      "type": "boolean",
+      "title": "Общее информированное добровольное согласие (ИДС) подписано",
+      "default": false
+    },
+    "consent_trial_signed": {
+      "type": "boolean",
+      "title": "ИДС на включение в КИ подписано",
+      "default": false
+    },
+    "consent_genetic_material_signed": {
+      "type": "boolean",
+      "title": "ИДС на забор и хранение генетического материала подписано",
+      "default": false
+    },
     "sex": {
       "title": "Пол",
       "enum" : ["male", "female", "other"],

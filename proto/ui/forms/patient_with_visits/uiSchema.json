@@ -9,9 +9,13 @@
       "nestedArray": "hospital_tests",
       "nestedLabelField": "name",
       "nestedValueField": "value_text",
-      "includeNames": ["Creatinine (mg/dL)", "AST (U/L)"]
+      "includeNames": ["Creatinine (mg/dL)", "AST (U/L)"],
+      "consent_general_signed": { "ui:widget": "checkbox" },
+      "consent_trial_signed": { "ui:widget": "checkbox" },
+      "consent_genetic_material_signed": { "ui:widget": "checkbox" }
     }
   ],
+  
   "visits": {
     "ui:options": { "tabs": true, "tabNameField": "visit_date" },
     "items": {
