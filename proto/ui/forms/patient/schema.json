@@ -2,7 +2,7 @@
   "title": "Пациент",
   "description": "Общие данные пациента",
   "type": "object",
-  "required": ["code", "last_name", "sex", "consent_general_signed", "consent_trial_signed", "consent_genetic_material_signed", ],
+  "required": ["code", "last_name", "sex", "consent_general_signed", "consent_trial_signed", "consent_genetic_material_signed"],
   "properties": {
     "code": { "type": "string", "title": "Код пациента" },
     "last_name": { "type": "string", "title": "Фамилия" },
