@@ -490,14 +490,27 @@
               const visits = (formData && formData[srcArrayKey]) || [];
               if (!Array.isArray(visits) || !visits.length) return;
 
-              // Collect unique test names
-              let names = [];
+              // Collect unique test names with normalization (trim/case/space)
+              const norm = (s) => String(s ?? '')
+                .replace(/\u00A0/g,' ') // NBSP -> space
+                .trim()
+                .replace(/\s+/g,' ')
+                .toLowerCase();
+              const nameMap = new Map(); // normName -> display name (first seen)
               visits.forEach(v => {
                 const arr = (v && v[nestedArray]) || [];
-                if (Array.isArray(arr)) arr.forEach(t => { const nm = t && t[nestedLabelField]; if (nm && !names.includes(nm)) names.push(nm); });
+                if (!Array.isArray(arr)) return;
+                arr.forEach(t => {
+                  const raw = t && t[nestedLabelField];
+                  if (!raw) return;
+                  const key = norm(raw);
+                  if (!nameMap.has(key)) nameMap.set(key, String(raw));
+                });
               });
+              let names = Array.from(nameMap.values());
               if (Array.isArray(cfg.includeNames) && cfg.includeNames.length) {
-                names = names.filter(n => cfg.includeNames.includes(n));
+                const includeKeys = new Set(cfg.includeNames.map(norm));
+                names = names.filter(n => includeKeys.has(norm(n)));
               }
               if (!names.length) return;
 
@@ -524,7 +537,8 @@
                 const data = visits.map(v => {
                   const arr = (v && v[nestedArray]) || [];
                   if (!Array.isArray(arr)) return null;
-                  const rec = arr.find(t => t && t[nestedLabelField] === name);
+                  const target = norm(name);
+                  const rec = arr.find(t => t && norm(t[nestedLabelField]) === target);
                   if (!rec) return null;
                   const val = rec[nestedValueField];
                   let n;
