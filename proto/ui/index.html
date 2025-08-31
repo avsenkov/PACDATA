@@ -383,6 +383,11 @@
 
       function renderVisitPane(pane, idx, d, anchor){
         let visitData = JSON.parse(JSON.stringify(d || {}));
+        const dateOnly = (v)=>{
+          if (typeof v !== 'string') return v;
+          const m = v.match(/\d{4}-\d{2}-\d{2}/);
+          return m ? m[0] : v;
+        };
         const innerSpecs = [];
         const innerApis = {};
         const { baseSchema: vBase, arrays: vArrays } = splitSchema(arrSchema.items, arrUi && arrUi.items);
@@ -390,11 +395,24 @@
         pane.appendChild(formDiv);
         function updateLabel(){
           const titleField = arrUi && arrUi['ui:options'] && arrUi['ui:options'].tabNameField;
-          let label = `Визит ${idx+1}`;
-          if (titleField && visitData && visitData[titleField]) label = visitData[titleField];
-          anchor.textContent = label;
+          const date = titleField && visitData ? dateOnly(visitData[titleField]) : '';
+          anchor.textContent = `№${idx} ${date || ''}`;
         }
-        const onChange = ({formData})=>{ visitData = formData; updateLabel(); };
+        const onChange = ({formData})=>{
+          visitData = { ...formData };
+          const titleField = arrUi && arrUi['ui:options'] && arrUi['ui:options'].tabNameField;
+          if (titleField && typeof visitData[titleField] === 'string') {
+            visitData[titleField] = dateOnly(visitData[titleField]);
+          }
+          updateLabel();
+        };
+        // sanitize initial
+        (function(){
+          const titleField = arrUi && arrUi['ui:options'] && arrUi['ui:options'].tabNameField;
+          if (titleField && visitData && typeof visitData[titleField] === 'string') {
+            visitData[titleField] = dateOnly(visitData[titleField]);
+          }
+        })();
         ReactDOM.render(React.createElement(Form, { schema: vBase, uiSchema: arrUi && arrUi.items, formData: visitData, onChange }), formDiv);
         vArrays.forEach(vArr=>{
           const itemProps = (vArr.schema.items && vArr.schema.items.properties) || {};
@@ -533,7 +551,15 @@
               const ctx = sec.querySelector(`#chart-${i}`);
 
               function seriesFor(name){
-                const labels = visits.map(v => (v && v[xField] != null) ? String(v[xField]) : '');
+                const dateOnly = (v)=>{
+                  if (typeof v !== 'string') return v;
+                  const m = v.match(/\d{4}-\d{2}-\d{2}/);
+                  return m ? m[0] : v;
+                };
+                const labels = visits.map((v, idx) => {
+                  const d = v && v[xField] != null ? String(v[xField]) : '';
+                  return `№${idx} ${dateOnly(d) || ''}`;
+                });
                 const data = visits.map(v => {
                   const arr = (v && v[nestedArray]) || [];
                   if (!Array.isArray(arr)) return null;
