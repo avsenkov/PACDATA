@@ -473,7 +473,7 @@
         };
         ReactDOM.render(React.createElement(Form, { schema: baseSchema, uiSchema, formData, templates:{ ArrayFieldTemplate: TabArrayFieldTemplate }, onSubmit }, actions), appEl);
 
-        // Charts rendering (between form and tables)
+        // Рендер графиков (между полями и таблицами)
         if (chartsEl) chartsEl.innerHTML = '';
         const chartDefs = (uiSchema && uiSchema['ui:charts']) || (formData && formData._charts) || [];
         if (chartsEl && Array.isArray(chartDefs) && chartDefs.length && window.Chart) {

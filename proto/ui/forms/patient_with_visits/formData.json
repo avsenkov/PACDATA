@@ -40,7 +40,7 @@
       "BMI" : 26.6, 
       "clinical_outcome_id": 1,
       "drug_intakes": [ { "drug_id": 1, "dose": "2", "unit_id":1, "NumPeriod":"3", "period":1, "Longitude":"Пожизненно", "Begining":"20/02/2024" } ],
-      "hospital_tests": [ { "name": "Creatinine (mg/dL)", "value_text": "1.1" } ],
+      "hospital_tests": [ { "name": "Creatinine (mg/dL)", "value_text": "1.1" }, { "name": "ALT (U/L)", "value_text": "35" } ],
       "lab_concentrations": [ { "drug_id": 1, "value_num": 1.2, "unit_id": 2 } ]
     }
   ]
