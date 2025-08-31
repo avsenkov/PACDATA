@@ -527,8 +527,17 @@
                   const rec = arr.find(t => t && t[nestedLabelField] === name);
                   if (!rec) return null;
                   const val = rec[nestedValueField];
-                  const n = (typeof val === 'number') ? val : Number(val);
-                  return isNaN(n) ? null : n;
+                  let n;
+                  if (typeof val === 'number') {
+                    n = val;
+                  } else if (typeof val === 'string') {
+                    // Extract first numeric token, allow comma or dot decimals and optional leading minus
+                    const m = val.match(/-?\d+(?:[.,]\d+)?/);
+                    n = m ? Number(m[0].replace(',', '.')) : NaN;
+                  } else {
+                    n = Number(val);
+                  }
+                  return Number.isFinite(n) ? n : null;
                 });
                 return { labels, data };
               }
