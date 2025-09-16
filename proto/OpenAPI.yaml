@@ -1,0 +1,871 @@
+openapi: 3.0.3
+info:
+  title: PacData API
+  version: "1.0.0"
+  description: |
+    REST API для работы с данными пациентов, их визитов и результатами аналитических моделей.
+    Форматы: date = YYYY-MM-DD, date-time = RFC3339.
+servers:
+  - url: https://api.example.com/v1
+    description: Production
+tags:
+  - name: Patients
+    description: Операции с пациентами
+  - name: Visits
+    description: Операции с визитами пациента
+  - name: ModelResults
+    description: Результаты аналитических моделей
+components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+  parameters:
+    PageParam:
+      in: query
+      name: page
+      schema: { type: integer, minimum: 1, default: 1 }
+    PageSizeParam:
+      in: query
+      name: page_size
+      schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+  schemas:
+    Gender:
+      type: string
+      enum: [male, female]
+    QuestionType:
+      type: string
+      enum: [text, number, integer, boolean, date, single_choice, multi_choice]
+    DataType:
+      type: string
+      enum: [string, number, integer, boolean, date]
+    PageMeta:
+      type: object
+      properties:
+        page: { type: integer, minimum: 1 }
+        page_size: { type: integer, minimum: 1, maximum: 200 }
+        total_items: { type: integer, minimum: 0 }
+        total_pages: { type: integer, minimum: 0 }
+      required: [page, page_size, total_items, total_pages]
+    
+    Patient:
+      type: object
+      properties:
+        id: { type: integer, readOnly: true }
+        code: { type: string }
+        last_name: { type: string }
+        first_name: { type: string }
+        middle_name: { type: string, nullable: true }
+        sex: { $ref: '#/components/schemas/Gender' }
+        birth_date: { type: string, format: date, nullable: true }
+        consent_general_signed: { type: boolean }
+        consent_trial_signed: { type: boolean }
+        consent_genetic_material_signed: { type: boolean }
+        diagnosis_text: { type: string, nullable: true }
+        primary_icd10_id: { type: integer, nullable: true }
+        patient_secondary_icd10:
+          type: array
+          description: Вторичные диагнозы пациента
+          items:
+            type: object
+            properties:
+              icd10_id: { type: integer }
+              description: { type: string, nullable: true }
+        created_at: { type: string, format: date-time, readOnly: true }
+      required: [id, code, last_name, first_name, sex, consent_general_signed, consent_trial_signed, consent_genetic_material_signed, created_at]
+    
+    Visit:
+      type: object
+      properties:
+        id: { type: integer, readOnly: true }
+        patient_id: { type: integer }
+        visit_date: { type: string, format: date }
+        weight_kg: { type: number, nullable: true }
+        height_cm: { type: number, nullable: true }
+        bmi: { type: number, nullable: true }
+        additional_disease_text: { type: string, nullable: true }
+        referral_text: { type: string, nullable: true }
+        clinical_outcome_id: { type: integer, nullable: true }
+        visit_drug_intakes:
+          type: array
+          description: Приём препаратов
+          items:
+            type: object
+            properties:
+              drug_name: { type: string }
+              dose: { type: string, nullable: true }
+              frequency: { type: string, nullable: true }
+        hospital_tests:
+          type: array
+          description: Больничные анализы
+          items:
+            type: object
+            properties:
+              test_type: { type: string }
+              result: { type: string, nullable: true }
+              date: { type: string, format: date, nullable: true }
+        lab_genetics:
+          type: array
+          description: Лабораторные генетические анализы
+          items:
+            type: object
+            properties:
+              marker: { type: string }
+              value: { type: string, nullable: true }
+        lab_concentrations:
+          type: array
+          description: Концентрация лекарств
+          items:
+            type: object
+            properties:
+              substance: { type: string }
+              concentration: { type: number, nullable: true }
+              unit: { type: string, nullable: true }
+        lab_phenotyping:
+          type: array
+          description: Фенотипирование
+          items:
+            type: object
+            properties:
+              parameter: { type: string }
+              value: { type: string, nullable: true }
+        lab_microrna:
+          type: array
+          description: Лабораторные анализы микроРНК
+          items:
+            type: object
+            properties:
+              marker: { type: string }
+              expression_level: { type: number, nullable: true }
+        instrumental_tests:
+          type: array
+          description: Инструментальные исследования
+          items:
+            type: object
+            properties:
+              test_name: { type: string }
+              result: { type: string, nullable: true }
+              date: { type: string, format: date, nullable: true }
+        patient_questionnaires:
+          type: array
+          description: Экземпляры опросников, заполненные в рамках визита
+          items:
+            $ref: '#/components/schemas/PatientQuestionnaire'
+        patient_questionnaire_tables:
+          type: array
+          description: Таблицы опросников пациента (строки)
+          items:
+            $ref: '#/components/schemas/PatientQuestionnaireTable'
+        patient_answers:
+          type: array
+          description: Ответы пациента на вопросы опросников
+          items:
+            $ref: '#/components/schemas/PatientAnswer'
+        patient_table_answers:
+          type: array
+          description: Ответы пациента по параметрам табличных опросников
+          items:
+            $ref: '#/components/schemas/PatientTableAnswer'
+      required: [id, patient_id, visit_date]
+
+    PatientQuestionnaire:
+      type: object
+      properties:
+        id: { type: integer, readOnly: true }
+        visit_id: { type: integer }
+        questionnaire_id: { type: integer }
+        created_at: { type: string, format: date-time, readOnly: true }
+      required: [id, visit_id, questionnaire_id, created_at]
+
+    PatientQuestionnaireTable:
+      type: object
+      properties:
+        id: { type: integer, readOnly: true }
+        patient_questionnaire_id: { type: integer }
+        questionnaire_table_id: { type: integer }
+        row_index: { type: integer }
+      required: [id, patient_questionnaire_id, questionnaire_table_id, row_index]
+
+    PatientAnswer:
+      type: object
+      properties:
+        id: { type: integer, readOnly: true }
+        patient_questionnaire_id: { type: integer }
+        question_id: { type: integer }
+        value_text: { type: string, nullable: true }
+      required: [id, patient_questionnaire_id, question_id]
+
+    PatientTableAnswer:
+      type: object
+      properties:
+        id: { type: integer, readOnly: true }
+        patient_questionnaire_table_id: { type: integer }
+        table_parameter_id: { type: integer }
+        value_text: { type: string, nullable: true }
+      required: [id, patient_questionnaire_table_id, table_parameter_id]
+
+
+    ModelResult:
+      type: object
+      properties:
+        patient_id: { type: integer }
+        model_identifier: { type: string, maxLength: 128 }
+        started_at: { type: string, format: date-time }
+        model_version: { type: string, maxLength: 64 }
+        result_text: { type: string, nullable: true }
+        saved_at: { type: string, format: date-time }
+      required: [id, patient_id, model_identifier, model_version, started_at, saved_at]
+    
+    PatientsPage:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Patient' }
+        meta: { $ref: '#/components/schemas/PageMeta' }
+      required: [data, meta]
+    VisitsPage:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Visit' }
+        meta: { $ref: '#/components/schemas/PageMeta' }
+      required: [data, meta]
+    
+    # --- Управление опросниками ---
+    Questionnaire:
+      type: object
+      properties:
+        id: { type: integer, readOnly: true }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        created_at: { type: string, format: date-time, readOnly: true }
+        updated_at: { type: string, format: date-time, readOnly: true }
+      required: [id, name]
+
+    QuestionnaireQuestion:
+      type: object
+      properties:
+        id: { type: integer, readOnly: true }
+        questionnaire_id: { type: integer }
+        question: { type: string }
+        help_text: { type: string, nullable: true }
+      required: [id, questionnaire_id, text]
+
+    QuestionnaireTable:
+      type: object
+      properties:
+        id: { type: integer, readOnly: true }
+        questionnaire_id: { type: integer }
+        name: { type: string }
+        
+      required: [id, questionnaire_id, name]
+
+    TableParameter:
+      type: object
+      properties:
+        id: { type: integer, readOnly: true }
+        questionnaire_table_id: { type: integer }
+        question: { type: string }
+        allowed_values: { type: string, nullable: true, description: 'Сериализованный список/JSON' }
+        
+      required: [id, questionnaire_table_id, code, name, data_type]
+
+    QuestionnairesPage:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/Questionnaire' } }
+        meta: { $ref: '#/components/schemas/PageMeta' }
+    QuestionsPage:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/QuestionnaireQuestion' } }
+        meta: { $ref: '#/components/schemas/PageMeta' }
+    TablesPage:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/QuestionnaireTable' } }
+        meta: { $ref: '#/components/schemas/PageMeta' }
+    TableParametersPage:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/TableParameter' } }
+        meta: { $ref: '#/components/schemas/PageMeta' }
+
+    ModelResultsPage:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/ModelResult' }
+        meta: { $ref: '#/components/schemas/PageMeta' }
+      required: [data, meta]
+    Problem:
+      type: object
+      description: Ошибка в формате RFC 7807
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        instance: { type: string }
+paths:
+  /patients:
+    get:
+      tags: [Patients]
+      summary: Список пациентов
+      security: [ { basicAuth: [] } ]
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+          description: Поиск по коду/ФИО
+        - in: query
+          name: project_id
+          schema: { type: integer }
+        - in: query
+          name: center_id
+          schema: { type: integer }
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - in: query
+          name: sort
+          schema: { type: string, enum: [created_at, -created_at, last_name, -last_name, code, -code] }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PatientsPage' }
+    post:
+      tags: [Patients]
+      summary: Создать пациента
+      security: [ { basicAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Patient' }
+      responses:
+        '201':
+          description: Создано
+          headers:
+            Location:
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Patient' }
+  /patients/{patient_id}:
+    get:
+      tags: [Patients]
+      summary: Получить пациента
+      security: [ { basicAuth: [] } ]
+      parameters:
+        - in: path
+          name: patient_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Patient' } } } }
+        '404': { description: Не найден, content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+    patch:
+      tags: [Patients]
+      summary: Обновить пациента
+      security: [ { basicAuth: [] } ]
+      parameters:
+        - in: path
+          name: patient_id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Patient' }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Patient' } } } }
+        '404': { description: Не найден, content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+  /patients/{patient_id}/visits:
+    get:
+      tags: [Visits]
+      summary: Список визитов пациента
+      security: [ { basicAuth: [] } ]
+      parameters:
+        - in: path
+          name: patient_id
+          required: true
+          schema: { type: integer }
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - in: query
+          name: sort
+          schema: { type: string, enum: [visit_date, -visit_date, created_at, -created_at] }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/VisitsPage' } } } }
+    post:
+      tags: [Visits]
+      summary: Создать визит
+      security: [ { basicAuth: [] } ]
+      parameters:
+        - in: path
+          name: patient_id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Visit' }
+      responses:
+        '201': { description: Создано, content: { application/json: { schema: { $ref: '#/components/schemas/Visit' } } } }
+        '404': { description: Пациент не найден, content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+  /patients/{patient_id}/visits/{visit_id}:
+    get:
+      tags: [Visits]
+      summary: Получить визит
+      security: [ { basicAuth: [] } ]
+      parameters:
+        - in: path
+          name: patient_id
+          required: true
+          schema: { type: integer }
+        - in: path
+          name: visit_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Visit' } } } }
+        '404': { description: Не найден, content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+    patch:
+      tags: [Visits]
+      summary: Обновить визит
+      security: [ { basicAuth: [] } ]
+      parameters:
+        - in: path
+          name: patient_id
+          required: true
+          schema: { type: integer }
+        - in: path
+          name: visit_id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Visit' }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Visit' } } } }
+        '404': { description: Не найден, content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+    delete:
+      tags: [Visits]
+      summary: Удалить визит
+      security: [ { basicAuth: [] } ]
+      parameters:
+        - in: path
+          name: patient_id
+          required: true
+          schema: { type: integer }
+        - in: path
+          name: visit_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Удалено }
+        '404': { description: Не найдено, content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+  /patients/{patient_id}/model-results:
+    get:
+      tags: [ModelResults]
+      summary: Список результатов моделей по пациенту
+      security: [ { basicAuth: [] } ]
+      parameters:
+        - in: path
+          name: patient_id
+          required: true
+          schema: { type: integer }
+        - in: query
+          name: model_identifier
+          schema: { type: string }
+        - in: query
+          name: model_version
+          schema: { type: string }
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - in: query
+          name: sort
+          schema: { type: string, enum: [-saved_at, saved_at, started_at, -started_at] }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/ModelResultsPage' } } } }
+    post:
+      tags: [ModelResults]
+      summary: Сохранить результат работы модели
+      security: [ { basicAuth: [] } ]
+      parameters:
+        - in: path
+          name: patient_id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ModelResult' }
+      responses:
+        '201': { description: Создано, content: { application/json: { schema: { $ref: '#/components/schemas/ModelResult' } } } }
+        '404': { description: Пациент не найден, content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+  /patients/{patient_id}/model-results/latest:
+    get:
+      tags: [ModelResults]
+      summary: Последний результат модели
+      description: Возвращает последний по времени сохранения (saved_at). Можно сузить по model_identifier.
+      security: [ { basicAuth: [] } ]
+      parameters:
+        - in: path
+          name: patient_id
+          required: true
+          schema: { type: integer }
+        - in: query
+          name: model_identifier
+          schema: { type: string }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/ModelResult' } } } }
+        '404': { description: Не найдено, content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+  # --- Опросники CRUD ---
+  /questionnaires:
+    get:
+      tags: [Questionnaires]
+      summary: Список опросников (шаблонов)
+      security: [ { basicAuth: [] } ]
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: is_active
+          schema: { type: boolean }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/QuestionnairesPage' }
+    post:
+      tags: [Questionnaires]
+      summary: Создать опросник (шаблон)
+      security: [ { basicAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Questionnaire' }
+      responses:
+        '201':
+          description: Создано
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Questionnaire' }
+
+  /questionnaires/{questionnaire_id}:
+    get:
+      tags: [Questionnaires]
+      summary: Получить опросник
+      security: [ { basicAuth: [] } ]
+      parameters:
+        - in: path
+          name: questionnaire_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Questionnaire' }
+    patch:
+      tags: [Questionnaires]
+      summary: Обновить опросник (частично)
+      security: [ { basicAuth: [] } ]
+      parameters:
+        - in: path
+          name: questionnaire_id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Questionnaire' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Questionnaire' }
+    delete:
+      tags: [Questionnaires]
+      summary: Удалить опросник
+      security: [ { basicAuth: [] } ]
+      parameters:
+        - in: path
+          name: questionnaire_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Удалено }
+
+  /questionnaires/{questionnaire_id}/questions:
+    get:
+      tags: [Questionnaires]
+      summary: Вопросы опросника
+      security: [ { basicAuth: [] } ]
+      parameters:
+        - in: path
+          name: questionnaire_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/QuestionsPage' }
+    post:
+      tags: [Questionnaires]
+      summary: Добавить вопрос в опросник
+      security: [ { basicAuth: [] } ]
+      parameters:
+        - in: path
+          name: questionnaire_id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/QuestionnaireQuestion' }
+      responses:
+        '201':
+          description: Создано
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/QuestionnaireQuestion' }
+
+  /questionnaire-questions/{question_id}:
+    get:
+      tags: [Questionnaires]
+      summary: Получить вопрос
+      security: [ { basicAuth: [] } ]
+      parameters:
+        - in: path
+          name: question_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/QuestionnaireQuestion' }
+    patch:
+      tags: [Questionnaires]
+      summary: Обновить вопрос
+      security: [ { basicAuth: [] } ]
+      parameters:
+        - in: path
+          name: question_id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/QuestionnaireQuestion' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/QuestionnaireQuestion' }
+    delete:
+      tags: [Questionnaires]
+      summary: Удалить вопрос
+      security: [ { basicAuth: [] } ]
+      parameters:
+        - in: path
+          name: question_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Удалено }
+
+  /questionnaires/{questionnaire_id}/tables:
+    get:
+      tags: [Questionnaires]
+      summary: Таблицы опросника
+      security: [ { basicAuth: [] } ]
+      parameters:
+        - in: path
+          name: questionnaire_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TablesPage' }
+    post:
+      tags: [Questionnaires]
+      summary: Добавить таблицу в опросник
+      security: [ { basicAuth: [] } ]
+      parameters:
+        - in: path
+          name: questionnaire_id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/QuestionnaireTable' }
+      responses:
+        '201':
+          description: Создано
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/QuestionnaireTable' }
+
+  /questionnaire-tables/{table_id}:
+    get:
+      tags: [Questionnaires]
+      summary: Получить таблицу опросника
+      security: [ { basicAuth: [] } ]
+      parameters:
+        - in: path
+          name: table_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/QuestionnaireTable' }
+    patch:
+      tags: [Questionnaires]
+      summary: Обновить таблицу опросника
+      security: [ { basicAuth: [] } ]
+      parameters:
+        - in: path
+          name: table_id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/QuestionnaireTable' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/QuestionnaireTable' }
+    delete:
+      tags: [Questionnaires]
+      summary: Удалить таблицу опросника
+      security: [ { basicAuth: [] } ]
+      parameters:
+        - in: path
+          name: table_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Удалено }
+
+  /questionnaire-tables/{table_id}/parameters:
+    get:
+      tags: [Questionnaires]
+      summary: Параметры таблицы опросника
+      security: [ { basicAuth: [] } ]
+      parameters:
+        - in: path
+          name: table_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TableParametersPage' }
+    post:
+      tags: [Questionnaires]
+      summary: Добавить параметр в таблицу опросника
+      security: [ { basicAuth: [] } ]
+      parameters:
+        - in: path
+          name: table_id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TableParameter' }
+      responses:
+        '201':
+          description: Создано
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TableParameter' }
+
+  /table-parameters/{parameter_id}:
+    get:
+      tags: [Questionnaires]
+      summary: Получить параметр таблицы
+      security: [ { basicAuth: [] } ]
+      parameters:
+        - in: path
+          name: parameter_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TableParameter' }
+    patch:
+      tags: [Questionnaires]
+      summary: Обновить параметр таблицы
+      security: [ { basicAuth: [] } ]
+      parameters:
+        - in: path
+          name: parameter_id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TableParameter' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TableParameter' }
+    delete:
+      tags: [Questionnaires]
+      summary: Удалить параметр таблицы
+      security: [ { basicAuth: [] } ]
+      parameters:
+        - in: path
+          name: parameter_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Удалено }
+
